@@ -22,11 +22,12 @@ Scan of upstream's source (`scripts/component-scan.sh`, classified against
 | signal connections | 59 |
 | action names (literal) | 19 |
 
-Port side: `lib/` holds three files — `lib/errands.rb` (one `require_relative`),
-`lib/errands/rb/version.rb` (version constant) and `lib/errands/application.rb`,
-which is a placeholder `Adwaita::ApplicationWindow` + `Adwaita::ToolbarView` +
-`Adwaita::HeaderBar` + `Adwaita::StatusPage` saying "The Ruby port has not been
-written yet." **No user-facing component of upstream exists in the port yet.**
+Port side (re-surveyed 2026-11-02, after the data layer, window, sidebar, task
+lists, tasks and the task toolbar landed): `lib/` holds `lib/errands.rb` plus 32
+files under `lib/errands/`. 23 of the 32 upstream component units below now have
+a port file; the Today, Tags and Trash sections and the preferences dialog do
+not, and neither does any of the sync stack. Per-unit status is on each section
+below, and the roll-up is in **Port status** at the end.
 
 Upstream has **no `.ui` or `.blp` for its widgets** — everything is built in
 Python, so the scan is the whole picture on that side. The one declarative file
@@ -54,9 +55,10 @@ likewise not ported. `components/controllers.py` is empty.
 | `Adw.Application` | 1 | — | `startup`, `activate` | app id `io.github.mrvladus.List`, `DEFAULT_FLAGS`; resource base path `/io/github/mrvladus/Errands/` |
 | background portal | 1 | — | — | `Xdp.Portal.request_background` driven by the `launch-on-startup` setting |
 
-Port target: `lib/errands/application.rb` — **exists as a stub only.** It
-creates the window and a placeholder status page; it installs no actions, no
-accelerators, no settings binding, no theme setup, no notifications daemon.
+Port target: `lib/errands/application.rb` — **exists.** It builds the window,
+installs the app actions and accelerators, applies the stylesheet and the icon
+theme and sets the colour scheme from the `theme` setting. Still missing: the
+background portal (blocked, see Blockers) and the notifications daemon.
 Per the Adwaita quirks, `Gtk::Application` stays (it already does).
 
 ## errands/state.py — global widget registry
@@ -67,7 +69,7 @@ and the three singleton dialogs, plus `get_task_lists` / `get_tasks` /
 `get_task` / `get_today_task` lookups. Everything in the app reaches everything
 else through it.
 
-Port target: `lib/errands/state.rb` — **absent.** Worth keeping as one object
+Port target: `lib/errands/state.rb` — **exists.** Kept as one object
 rather than class-level globals, so the memoized widget methods can be reached
 without a global.
 
@@ -105,9 +107,12 @@ App actions installed here, with accelerators:
 
 Also: `Adw.StyleManager.set_color_scheme(GSettings.get("theme"))` at startup.
 
-Port target: `lib/errands/window.rb` — **absent.** The About dialog and the
-import dialog are large enough to extract: `lib/errands/about_dialog.rb` and
-`lib/errands/import_dialog.rb`.
+Port target: `lib/errands/window.rb` — **exists**, with the About dialog and
+the import dialog extracted as planned into `lib/errands/about_dialog.rb` and
+`lib/errands/import_dialog.rb` (both **exist**). `lib/errands/window.rb` also
+holds `StatusPageView`, the empty-state page. The view stack carries only the
+pages whose components exist, so the Today, Tags and Trash pages are not wired
+in yet.
 
 ## data/resources/gtk/help-overlay.ui — keyboard shortcuts window
 
@@ -128,9 +133,11 @@ Note the drift to reproduce or fix deliberately: the window advertises `F9`
 toggled by a per-task button. `<Control>F` is listed for sync while the source
 binds `F5` and `<primary>f`.
 
-Port target: `lib/errands/shortcuts_dialog.rb` — **absent.** `Gtk::ShortcutsWindow`
-is present in the bindings, so this is built in code rather than loaded from
-`.ui`.
+Port target: `lib/errands/shortcuts_dialog.rb` — **exists, partial.**
+`Gtk::ShortcutsWindow` turned out to be unusable from the bindings
+(constructing one raises "GtkWindow is not subtype of GtkShortcutsWindow"), so
+the port builds `Adwaita::ShortcutsDialog` instead. The Sync, Preferences and
+Toggle Details entries are still left out, pending those components.
 
 ## errands/widgets/loading_page.py — "Loading Tasks…" page
 
@@ -140,7 +147,7 @@ is present in the bindings, so this is built in code rather than loaded from
 | `Adw.ToolbarView` + `Adw.HeaderBar` | 1 each | — | — | `show_title=False` |
 | `Adw.StatusPage` | 1 | `compact` | — | "Loading Tasks…", icon `errands-progressbar-symbolic`, `vexpand` |
 
-Port target: `lib/errands/loading_page.rb` — **absent.**
+Port target: `lib/errands/loading_page.rb` — **exists.**
 
 ## errands/widgets/sidebar.py — the sidebar
 
@@ -167,9 +174,9 @@ Conditional: the status page shows only when there are zero task-list rows, and
 showing it also switches the stack to `errands_status_page`.
 
 Port targets: `lib/errands/sidebar.rb` and `lib/errands/add_list_dialog.rb` —
-both **absent.** `Adwaita::MessageDialog` is present in the bindings but
-deprecated upstream of libadwaita 1.9; `Adwaita::AlertDialog` is also present
-and is the better target.
+both **exist.** The dialog is built on `Adwaita::AlertDialog` rather than the
+deprecated `Adwaita::MessageDialog`. The sidebar list box holds only the task
+list rows so far — the three fixed rows (Today, Tags, Trash) are not built.
 
 ## errands/widgets/shared/titled_separator.py — "— Completed —" separator
 
@@ -182,7 +189,7 @@ and is the better target.
 Used by: sidebar ("Task Lists"), `TaskList` ("Completed"), `Task` ("Completed"),
 task toolbar ("Custom").
 
-Port target: `lib/errands/titled_separator.rb` — **absent.**
+Port target: `lib/errands/titled_separator.rb` — **exists.**
 
 ## errands/widgets/task_list/task_list_sidebar_row.py — one task-list row
 
@@ -206,7 +213,8 @@ Also constructs the row's `TaskList` and adds it to the view stack as a
 `Adw.ViewStackPage` named after the list.
 
 Port targets: `lib/errands/task_list_sidebar_row.rb` plus
-`lib/errands/rename_list_dialog.rb` — **absent.**
+`lib/errands/rename_list_dialog.rb` — both **exist.** The drop target carries
+a task uid string rather than a `Task` GType (see Blockers).
 
 ## errands/widgets/task_list/task_list.py — one task list page
 
@@ -230,7 +238,7 @@ column.
 Conditional: new tasks go to the top or the bottom per
 `task-list-new-task-position-top`.
 
-Port target: `lib/errands/task_list.rb` — **absent.**
+Port target: `lib/errands/task_list.rb` — **exists.**
 
 ## errands/widgets/task.py — one task card (the biggest component)
 
@@ -275,9 +283,9 @@ progress bar, plus `task-completed`; drop the colour and the app is grey.
 | `Gtk.Label` | 1 | `caption-heading` | — | max 15 chars, ellipsize END |
 | `Gtk.Button` | 1 | — | `clicked` → removes the tag from the task | `errands-close-symbolic`, pointer cursor, tooltip "Delete Tag" |
 
-Port targets: `lib/errands/task.rb` and `lib/errands/tag.rb` — **absent.** This
-is well past the ~10-widget threshold, so the title row, the sub-task section
-and the tags bar are candidates for their own classes under the house style.
+Port targets: `lib/errands/task.rb` and `lib/errands/tag.rb` — both **exist.**
+`task.rb` is 951 lines and still carries the title row, the sub-task section
+and the tags bar in one class; splitting them out stays a refactor candidate.
 
 ## errands/widgets/shared/task_toolbar/toolbar.py — the per-task toolbar
 
@@ -311,8 +319,7 @@ Repeaters: one `ErrandsToolbarTagsListItem` per known tag in the tags popover.
 | `Gtk.Image` | 1 | `dim-label` | — | `errands-tag-symbolic` |
 
 Port targets: `lib/errands/task_toolbar.rb` and
-`lib/errands/toolbar_tag_row.rb` — **absent.** `Adwaita::WrapBox` is present in
-the bindings (libadwaita 1.9 in the dev shell).
+`lib/errands/toolbar_tag_row.rb` — both **exist**, on `Adwaita::WrapBox`.
 
 ## errands/widgets/shared/color_selector.py — the eight accent swatches
 
@@ -321,9 +328,8 @@ the bindings (libadwaita 1.9 in the dev shell).
 | `Gtk.Box` | 1 | — | custom `color-selected` signal | |
 | `Gtk.CheckButton` | 8 | `accent-color-btn` + `accent-color-btn-{none,blue,green,yellow,orange,red,purple,brown}` | `toggled` → emits `color-selected` | radio group on the "none" button; names and tooltips None/Blue/Green/Yellow/Orange/Red/Purple/Brown |
 
-Port target: `lib/errands/color_selector.rb` — **absent.** Needs a custom
-GObject signal or, more simply under the house style, a callback passed to the
-constructor.
+Port target: `lib/errands/color_selector.rb` — **exists**, with a callback
+passed to the constructor in place of upstream's custom GObject signal.
 
 ## errands/widgets/shared/task_toolbar/notes_window.py — notes editor
 
@@ -334,8 +340,10 @@ constructor.
 | `Gtk.ScrolledWindow` | 1 | — | — | |
 | `GtkSource.View` + `GtkSource.Buffer` | 1 each | — | — | markdown language, line numbers, wrap, 6px margins; style scheme bound to `Adw.StyleManager.dark` (Adwaita / Adwaita-dark) |
 
-Port target: `lib/errands/notes_dialog.rb` — **absent, and blocked:** the
-`GtkSource` typelib is not in the dev shell (see Blockers).
+Port target: `lib/errands/notes_dialog.rb` — **exists, with a known gap:** the
+`GtkSource` typelib is not in the dev shell (see Blockers), so a plain
+`Gtk::TextView` carries the buffer — no markdown highlighting, no line numbers,
+no style scheme bound to the dark state.
 
 ## errands/widgets/shared/task_toolbar/datetime_window.py — date/time dialog
 
@@ -347,7 +355,7 @@ Port target: `lib/errands/notes_dialog.rb` — **absent, and blocked:** the
 | `Gtk.ScrolledWindow` | 2 | — | — | one per page |
 | `DateTimePicker` | 2 | — | — | 12px margins |
 
-Port target: `lib/errands/datetime_dialog.rb` — **absent.**
+Port target: `lib/errands/datetime_dialog.rb` — **exists.**
 
 ## errands/widgets/shared/datetime_picker.py — the date/time picker
 
@@ -367,7 +375,7 @@ The picker's `datetime` is a string property (`YYYYMMDD` or `YYYYMMDDTHHMMSS`);
 setting it drives the label, the two spinners and the calendar, and the label
 falls back to "Set Date" when it is empty.
 
-Port target: `lib/errands/datetime_picker.rb` — **absent.**
+Port target: `lib/errands/datetime_picker.rb` — **exists.**
 
 ## errands/widgets/shared/task_toolbar/attachments_window.py — attachments
 
@@ -392,7 +400,7 @@ Two classes.
 | `Gtk.Button` | 2 | `flat`, delete also `error` | `clicked` | open containing folder (`errands-folder-symbolic`); delete (`errands-trash-symbolic`) |
 
 Port targets: `lib/errands/attachments_dialog.rb` and
-`lib/errands/attachment_row.rb` — **absent.**
+`lib/errands/attachment_row.rb` — both **exist.**
 
 ## errands/widgets/today/today.py — the Today page
 
@@ -518,7 +526,8 @@ Port target: `lib/errands/trash_sidebar_row.rb` — **absent.**
 
 Used by: delete a list, clear the trash.
 
-Port target: `lib/errands/confirm_dialog.rb` — **absent.**
+Port target: `lib/errands/confirm_dialog.rb` — **exists**, on
+`Adwaita::AlertDialog`.
 
 ## errands/widgets/preferences.py — the preferences dialog
 
@@ -547,8 +556,12 @@ Port target: `lib/errands/preferences_dialog.rb` — **absent.**
 
 ## Support modules the components depend on
 
-Not user-facing components, but no component works without them. All **absent**
-from the port.
+Not user-facing components, but no component works without them. `data.rb`,
+`settings.rb`, `markup.rb`, `animation.rb`, `utils.rb`, `logging.rb`,
+`style.rb` and a new `icons.rb` (which registers the 42 `errands-*-symbolic`
+icons the tables above name) now **exist**. The sync stack —
+`sync.rb`, `caldav_provider.rb`, `nextcloud_provider.rb`, `goa.rb` — plus
+`notifications.rb` and `translations.rb` are still **absent**.
 
 | Upstream | Port target | What it is |
 |---|---|---|
@@ -587,4 +600,67 @@ plus the two app icons. Every `icon_name` in the tables above that starts
 4. **No iCalendar or CalDAV gem in the bundle.** `Gemfile` carries only `gtk4` and `adwaita` for the app. Upstream's list import (`app.import`), list export, task export and the whole Sync page rest on `to_ical` / `from_ical` and the `caldav` Python library. The port needs gems chosen and vendored through `gemset.nix` before those components can exist.
 5. **`Gtk::DropTarget.new(type: Task, ...)` has no direct Ruby equivalent.** Upstream types four drop targets on the Python `Task` class itself. Ruby GTK cannot register an arbitrary Ruby class as a GType for this, so task drag-and-drop — reorder, re-parent, move between lists, drop on a list row, drop on Trash — needs a different carrier (a `GLib::Value` of a string uid, or a small `GObject` subclass). This touches `task.rb`, `task_list.rb`, `task_list_sidebar_row.rb` and `trash_sidebar_row.rb`.
 6. **`Adwaita::MessageDialog` is deprecated** in the libadwaita the dev shell carries (1.9). It is still bound and still works, but `Adwaita::AlertDialog` is present and is the right target for the three dialogs that use it (Add List, Rename List, ConfirmDialog).
+Status as of 2026-11-02: blockers 1-4 still stand. Blocker 5 is resolved — the
+port's drop targets carry the task uid as a `String` and look the task up
+through `State`. Blocker 6 is resolved — `Adwaita::AlertDialog` is used for Add
+List, Rename List and ConfirmDialog. A new one found while porting: `Gtk::ShortcutsWindow`
+cannot be constructed from the bindings at all, so the shortcuts window is built
+with `Adwaita::ShortcutsDialog`.
+
 7. **Two upstream drifts to decide on, not inherit silently.** The shortcuts window advertises `F9` "Toggle Details" with no such accelerator in the source, and `<Control>F` for sync while the source binds `F5` and `<primary>f`. `app.quit` is also registered twice in `window.py` with different accelerator sets.
+
+---
+
+## Port status roll-up (2026-11-02)
+
+| Upstream file | Port file | Kind | Present |
+|---|---|---|:-:|
+| `errands/application.py` | `lib/errands/application.rb` | application | yes |
+| `errands/state.py` | `lib/errands/state.rb` | support | yes |
+| `errands/widgets/window.py` | `lib/errands/window.rb` | window | yes |
+| `errands/widgets/window.py` (`_about`) | `lib/errands/about_dialog.rb` | dialog | yes |
+| `errands/widgets/window.py` (`_import`) | `lib/errands/import_dialog.rb` | dialog | yes |
+| `errands/widgets/window.py` (empty state) | `lib/errands/window.rb` (`StatusPageView`) | empty state | yes |
+| `data/resources/gtk/help-overlay.ui` | `lib/errands/shortcuts_dialog.rb` | shortcuts window | partial |
+| `errands/widgets/loading_page.py` | `lib/errands/loading_page.rb` | page | yes |
+| `errands/widgets/sidebar.py` | `lib/errands/sidebar.rb` | sidebar | yes |
+| `errands/widgets/sidebar.py` (Add List) | `lib/errands/add_list_dialog.rb` | dialog | yes |
+| `errands/widgets/shared/titled_separator.py` | `lib/errands/titled_separator.rb` | widget | yes |
+| `errands/widgets/task_list/task_list_sidebar_row.py` | `lib/errands/task_list_sidebar_row.rb` | row | yes |
+| `errands/widgets/task_list/task_list_sidebar_row.py` (Rename) | `lib/errands/rename_list_dialog.rb` | dialog | yes |
+| `errands/widgets/task_list/task_list.py` | `lib/errands/task_list.rb` | page | yes |
+| `errands/widgets/task.py` (`Task`) | `lib/errands/task.rb` | widget | yes |
+| `errands/widgets/task.py` (`Tag`) | `lib/errands/tag.rb` | widget | yes |
+| `errands/widgets/shared/task_toolbar/toolbar.py` (`ErrandsTaskToolbar`) | `lib/errands/task_toolbar.rb` | toolbar | yes |
+| `errands/widgets/shared/task_toolbar/toolbar.py` (`ErrandsToolbarTagsListItem`) | `lib/errands/toolbar_tag_row.rb` | row | yes |
+| `errands/widgets/shared/color_selector.py` | `lib/errands/color_selector.rb` | widget | yes |
+| `errands/widgets/shared/task_toolbar/notes_window.py` | `lib/errands/notes_dialog.rb` | dialog | yes (no GtkSource) |
+| `errands/widgets/shared/task_toolbar/datetime_window.py` | `lib/errands/datetime_dialog.rb` | dialog | yes |
+| `errands/widgets/shared/datetime_picker.py` | `lib/errands/datetime_picker.rb` | widget | yes |
+| `errands/widgets/shared/task_toolbar/attachments_window.py` (`ErrandsAttachmentsWindow`) | `lib/errands/attachments_dialog.rb` | dialog | yes |
+| `errands/widgets/shared/task_toolbar/attachments_window.py` (`ErrandsAttachment`) | `lib/errands/attachment_row.rb` | row | yes |
+| `errands/widgets/shared/components/dialogs.py` | `lib/errands/confirm_dialog.rb` | dialog | yes |
+| `errands/widgets/today/today.py` | `lib/errands/today.rb` | page | **no** |
+| `errands/widgets/today/today_task.py` | `lib/errands/today_task.rb` | widget | **no** |
+| `errands/widgets/today/today_sidebar_row.py` | `lib/errands/today_sidebar_row.rb` | row | **no** |
+| `errands/widgets/tags/tags.py` (`Tags`) | `lib/errands/tags.rb` | page | **no** |
+| `errands/widgets/tags/tags.py` (`Tag`) | `lib/errands/tag_row.rb` | row | **no** |
+| `errands/widgets/tags/tags_sidebar_row.py` | `lib/errands/tags_sidebar_row.rb` | row | **no** |
+| `errands/widgets/trash/trash.py` (`Trash`) | `lib/errands/trash.rb` | page | **no** |
+| `errands/widgets/trash/trash.py` (`TrashItem`) | `lib/errands/trash_item.rb` | row | **no** |
+| `errands/widgets/trash/trash_sidebar_row.py` | `lib/errands/trash_sidebar_row.rb` | row | **no** |
+| `errands/widgets/preferences.py` | `lib/errands/preferences_dialog.rb` | dialog | **no** |
+| `errands/lib/data.py` | `lib/errands/data.rb` | support | yes |
+| `errands/lib/gsettings.py` + gschema | `lib/errands/settings.rb` | support | yes |
+| `errands/lib/markup.py` | `lib/errands/markup.rb` | support | yes |
+| `errands/lib/animation.py` | `lib/errands/animation.rb` | support | yes |
+| `errands/lib/utils.py` | `lib/errands/utils.rb` | support | yes |
+| `errands/lib/logging.py` | `lib/errands/logging.rb` | support | yes |
+| `data/resources/style.css`, `style-dark.css` | `lib/errands/style.rb` | stylesheet | yes |
+| `data/icons/hicolor/symbolic/apps/*.svg` | `lib/errands/icons.rb` | icon theme | yes |
+| `errands/lib/notifications.py` | `lib/errands/notifications.rb` | support | **no** |
+| `errands/lib/sync/sync.py` | `lib/errands/sync.rb` | support | **no** |
+| `errands/lib/sync/providers/caldav.py` | `lib/errands/caldav_provider.rb` | support | **no** |
+| `errands/lib/sync/providers/nextcloud.py` | `lib/errands/nextcloud_provider.rb` | support | **no** |
+| `errands/lib/goa.py` | `lib/errands/goa.rb` | support | **no** |
+| `po/` (30 languages) | `lib/errands/translations.rb` | translations | **no** |
