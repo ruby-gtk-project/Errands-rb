@@ -7,19 +7,22 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'tags_sidebar_row'
 require_relative 'task_list_sidebar_row'
 require_relative 'titled_separator'
+require_relative 'today_sidebar_row'
+require_relative 'trash_sidebar_row'
 require_relative 'utils'
 
 module Errands
-  # Sidebar lists the task lists and holds the main menu.
+  # Sidebar lists the Today, Tags and Trash rows, the task lists and holds
+  # the main menu.
   #
   # Ported from the Sidebar class in upstream's errands/widgets/sidebar.py.
   #
-  # Three things upstream shows here belong to components this port has not
-  # reached yet, and are left out rather than faked: the Today, Tags and Trash
-  # rows, the syncing spinner, and the "Sync / Fetch Tasks" and "Preferences"
-  # menu items.
+  # Two things upstream shows here belong to components this port has not
+  # reached yet, and are left out rather than faked: the syncing spinner, and
+  # the "Sync / Fetch Tasks" and "Preferences" menu items.
   #
   # Upstream also gives its add-list button a managed Gtk.ShortcutController so
   # Ctrl+Shift+A activates it; Gtk::ShortcutTrigger.parse_string has no Ruby
@@ -57,6 +60,10 @@ module Errands
             scroller.child = list_box
 
             list_box.tap do |list|
+              list.append(today_sidebar_row.build)
+              list.append(tags_sidebar_row.build)
+              list.append(trash_sidebar_row.build)
+
               list.signal_connect('row-selected') { |_, selected_row| selected_row&.activate }
               list.set_header_func { |row, before| add_header(row, before) }
             end
@@ -213,6 +220,12 @@ module Errands
       end
     end
 
+    def today_sidebar_row = @today_sidebar_row ||= TodaySidebarRow.new
+
+    def tags_sidebar_row = @tags_sidebar_row ||= TagsSidebarRow.new
+
+    def trash_sidebar_row = @trash_sidebar_row ||= TrashSidebarRow.new
+
     private
 
       def import_section
@@ -229,11 +242,17 @@ module Errands
         end
       end
 
-      # The first task list row carries the "Task Lists" rule above it.
+      # The first task list row carries the "Task Lists" rule above it: any
+      # row whose predecessor is nil (only possible if there are no fixed
+      # rows) or is not itself a task list row.
       def add_header(row, before)
-        if before.nil?
+        if task_list_row?(row) && !task_list_row?(before)
           TitledSeparator.new('Task Lists', [12, 12, 0, 2]).then { |header| row.header = header.build }
         end
+      end
+
+      def task_list_row?(widget)
+        !widget.nil? && @rows.any? { |tracked| tracked.row == widget }
       end
 
       def select_last_opened_item

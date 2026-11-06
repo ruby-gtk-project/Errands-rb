@@ -16,7 +16,11 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
   d.window { application.window.root }
 
   d.step('the window builds and shows the empty state') do
-    d.check('status page is showing') { application.window.view_stack.visible_child_name == 'errands_status_page' }
+    # The sidebar's fixed Today/Tags/Trash rows mean the list box is never
+    # empty, so GTK's single-selection ListBox auto-selects the first one
+    # (Today) once the window is shown, rather than leaving the status page
+    # on screen as it would with no rows at all.
+    d.check('today page is showing') { application.window.view_stack.visible_child_name == 'errands_today_page' }
     d.check('sidebar has no lists') { application.window.sidebar.rows.empty? }
     d.shot('01-empty')
   end

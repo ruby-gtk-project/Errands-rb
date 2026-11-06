@@ -26,7 +26,14 @@ module Errands
         :sidebar,
         :notes_dialog,
         :datetime_dialog,
-        :attachments_dialog
+        :attachments_dialog,
+        :today_page,
+        :today_sidebar_row,
+        :tags_page,
+        :tags_sidebar_row,
+        :trash_page,
+        :trash_sidebar_row,
+        :notifications
 
       def app_id = APP_ID
 

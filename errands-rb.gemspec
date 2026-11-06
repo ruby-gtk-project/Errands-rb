@@ -109,6 +109,16 @@ Gem::Specification.new do |spec|
   #       Development dependencies that require strictly newer Ruby versions should be in a "gemfile",
   #       and preferably a modular one (see gemfiles/modular/*.gemfile).
 
+  # Runtime — the GTK4/Libadwaita toolkit this app is built on
+  spec.add_dependency("gtk4", "~> 4.3")
+  spec.add_dependency("adwaita", "~> 4.3")
+  spec.add_dependency("glib2", "~> 4.3")
+
+  # Runtime — the XDG desktop portals (background portal, file chooser) and
+  # Gnome Online Accounts (CalDAV/Nextcloud credential discovery for sync)
+  spec.add_dependency("ashpd", "~> 0.1")
+  spec.add_dependency("goa-rb", "~> 1.0")
+
   # Dev, Test, & Release Tasks
   spec.add_development_dependency("kettle-dev", "~> 3.1", ">= 3.1.26")             # ruby >= 3.4
 

@@ -11,6 +11,9 @@ require_relative 'settings'
 require_relative 'shortcuts_dialog'
 require_relative 'sidebar'
 require_relative 'state'
+require_relative 'tags'
+require_relative 'today'
+require_relative 'trash'
 
 module Errands
   # Window is the main window: the sidebar beside the view stack, the toasts
@@ -18,8 +21,8 @@ module Errands
   #
   # Ported from the Window class in upstream's errands/widgets/window.py.
   #
-  # The syncing page, the Today, Tags and Trash pages and the sync action
-  # arrive with the components behind them; the window wires what exists.
+  # The syncing page and the sync action arrive with the components behind
+  # them; the window wires what exists.
   #
   class Window
     MIN_WIDTH = 360
@@ -58,6 +61,9 @@ module Errands
         view_stack.tap do |stack|
           stack.add_titled(loading_page.build, 'errands_loading_page', 'Loading Tasks')
           stack.add_titled(status_page_view.build, 'errands_status_page', 'Create new List')
+          stack.add_titled(today.build, 'errands_today_page', 'Today')
+          stack.add_titled(tags.build, 'errands_tags_page', 'Tags')
+          stack.add_titled(trash.build, 'errands_trash_page', 'Trash')
         end
 
         status_page_button.signal_connect('clicked') { sidebar.add_list }
@@ -128,6 +134,12 @@ module Errands
         button.add_css_class('suggested-action')
       end
     end
+
+    def today = @today ||= Today.new
+
+    def tags = @tags ||= Tags.new
+
+    def trash = @trash ||= Trash.new
 
     def about_dialog = @about_dialog ||= AboutDialog.new.tap(&:build)
 
