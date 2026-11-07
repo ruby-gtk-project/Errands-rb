@@ -8,6 +8,9 @@ ENV['XDG_DATA_HOME'] = File.join(scratch, 'data')
 ENV['XDG_CACHE_HOME'] = File.join(scratch, 'cache')
 
 require_relative '../lib/errands'
+# Goa is written but not yet wired into any require chain — no sync provider
+# calls it yet — so it has to be pulled in by hand to exercise it at all.
+require_relative '../lib/errands/goa'
 require_relative 'gtk_driver'
 
 app = Errands::Application.new
@@ -23,6 +26,35 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     d.check('today page is showing') { application.window.view_stack.visible_child_name == 'errands_today_page' }
     d.check('sidebar has no lists') { application.window.sidebar.rows.empty? }
     d.shot('01-empty')
+  end
+
+  d.step('every icon the app writes out is in the theme') do
+    icon_theme = Gtk::IconTheme.get_for_display(Gdk::Display.default)
+    d.check('the search path carries the app icon directory') do
+      icon_theme.search_path.include?(Errands::Icons.search_path)
+    end
+    Errands::Icons::SVG.each_key do |name|
+      d.check("the icon theme resolves #{name}") { icon_theme.has_icon?(name) }
+    end
+  end
+
+  d.step('every app action is registered with its accelerator') do
+    Errands::Window::ACTIONS.each do |name, accelerators|
+      d.check("app.#{name} is registered") { !application.app.lookup_action(name).nil? }
+      unless accelerators.empty?
+        d.check("app.#{name} has its accelerator") do
+          # GTK re-renders the accelerator string once registered (<primary>
+          # resolves to the concrete modifier, and multi-modifier combos can
+          # come back in a different order), so this compares parsed keyvals
+          # and modifiers rather than the raw strings.
+          registered = application.app.get_accels_for_action("app.#{name}")
+          registered.length == accelerators.length &&
+            registered.zip(accelerators).all? do |actual, expected|
+              Gtk.accelerator_parse(actual) == Gtk.accelerator_parse(expected)
+            end
+        end
+      end
+    end
   end
 
   d.step('add a list through the sidebar dialog') do
@@ -136,6 +168,55 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     d.check('button shows it') { task.toolbar.date_time_content.label == '15 January 09:00' }
   end
 
+  d.step('selecting the Today row switches pages') do
+    application.window.sidebar.list_box.select_row(application.window.sidebar.today_sidebar_row.row)
+  end
+
+  d.step('the Today page lists the overdue task across lists') do
+    d.check('today page is visible') { application.window.view_stack.visible_child_name == 'errands_today_page' }
+    d.check('one task is overdue') { application.window.today.tasks_data.length == 1 }
+    d.check('it is the task with the due date') do
+      application.window.today.tasks_data.first.text == 'Bread'
+    end
+    d.check('the sidebar counter shows it') { application.window.sidebar.today_sidebar_row.size_counter.label == '1' }
+    d.shot('09-today')
+  end
+
+  d.step('selecting the Tags row switches pages') do
+    application.window.sidebar.list_box.select_row(application.window.sidebar.tags_sidebar_row.row)
+  end
+
+  d.step('the Tags page is empty and a new tag can be added there') do
+    d.check('tags page is visible') { application.window.view_stack.visible_child_name == 'errands_tags_page' }
+    d.check('no tags yet') { application.window.tags.rows.empty? }
+    application.window.tags.entry_row.text = 'home'
+    application.window.tags.entry_row.signal_emit('entry-activated')
+  end
+
+  d.step('the new tag is listed and counted') do
+    d.check('one tag row') { application.window.tags.rows.map(&:title) == ['home'] }
+    d.check('the sidebar counter shows it') { application.window.sidebar.tags_sidebar_row.size_counter.label == '1' }
+    d.shot('09a-tags-page')
+  end
+
+  d.step('selecting the Trash row switches pages') do
+    application.window.sidebar.list_box.select_row(application.window.sidebar.trash_sidebar_row.row)
+  end
+
+  d.step('the Trash page is empty before anything is trashed') do
+    d.check('trash page is visible') { application.window.view_stack.visible_child_name == 'errands_trash_page' }
+    d.check('nothing is trashed yet') { application.window.trash.trash_items.empty? }
+    d.shot('09b-trash-page-empty')
+  end
+
+  d.step('switching back to the list restores it') do
+    application.window.sidebar.list_box.select_row(application.window.sidebar.rows.first.row)
+  end
+
+  d.step('the list page is visible again') do
+    d.check('list page is visible') { application.window.view_stack.visible_child_name == 'Groceries' }
+  end
+
   d.step('rename the list') do
     application.window.sidebar.rows.first.row.activate_action('list_row.rename')
   end
@@ -184,6 +265,9 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     task.toolbar.tag_rows.first.toggle_button.active = true
     d.check('task carries the tag') { task.task_data.tags == ['home'] }
     d.check('a chip is shown') { task.tags.map(&:title) == ['home'] }
+  end
+
+  d.step('the chip is realised on screen') do
     d.shot('12-tags')
   end
 
@@ -192,6 +276,55 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     task.tags.first.delete_button.signal_emit('clicked')
     d.check('task has no tags') { task.task_data.tags.empty? }
     d.check('no chips left') { task.tags.empty? }
+  end
+
+  d.step('opening the priority popover seeds the custom spin button') do
+    task = application.window.sidebar.rows.first.task_list.tasks.first
+    task.toolbar.priority_button.active = true
+    d.check('spin button starts at the current priority') { task.toolbar.custom_priority_button.value_as_int == 0 }
+  end
+
+  d.step('picking the High preset stores it once the popover closes') do
+    task = application.window.sidebar.rows.first.task_list.tasks.first
+    high_row = Errands::Utils.children(task.toolbar.priority_list).first
+    task.toolbar.priority_list.signal_emit('row-activated', high_row)
+    d.check('spin button took the preset') { task.toolbar.custom_priority_button.value_as_int == 1 }
+    d.check('popover closed itself') { !task.toolbar.priority_button.active? }
+    d.check('the record stored it') { task.task_data.priority == 1 }
+    d.check('the button picked up the error class') { task.toolbar.priority_button.css_classes.include?('error') }
+  end
+
+  d.step('the priority button is realised on screen') do
+    d.shot('12a-priority')
+  end
+
+  d.step('opening the overflow menu seeds the colour selector') do
+    task = application.window.sidebar.rows.first.task_list.tasks.first
+    task.toolbar.menu_button.active = true
+    d.check('none is selected to start') { task.toolbar.color_selector.buttons['none'].active? }
+  end
+
+  d.step('the overflow menu is realised on screen') do
+    d.shot('12b-overflow-menu')
+  end
+
+  d.step('picking a colour writes it to the task') do
+    task = application.window.sidebar.rows.first.task_list.tasks.first
+    task.toolbar.color_selector.buttons['blue'].active = true
+    d.check('the record stored the colour') { task.task_data.color == 'blue' }
+  end
+
+  d.step('the attachments dialog opens from the toolbar button, empty') do
+    task = application.window.sidebar.rows.first.task_list.tasks.first
+    task.toolbar.attachments_button.signal_emit('clicked')
+    d.check('the dialog is showing') { application.window.root.visible_dialog.equal?(Errands::State.attachments_dialog) }
+    d.check('no attachments yet') { task.task_data.attachments.empty? }
+    d.check('the empty-state page is shown') { Errands::State.attachments_dialog.status_page.visible? }
+  end
+
+  d.step('the attachments dialog is realised on screen') do
+    d.shot('12c-attachments-empty')
+    Errands::State.attachments_dialog.close
   end
 
   d.step('a drag hands over the task identity') do
@@ -217,6 +350,37 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     d.check('settings file written') { File.exist?(Errands::Settings.location) }
   end
 
+  d.step('the Trash row and page show the trashed task') do
+    d.check('trash row counter shows it') { application.window.sidebar.trash_sidebar_row.size_counter.label == '1' }
+    d.check('trash icon switched to full') do
+      application.window.sidebar.trash_sidebar_row.send(:icon).icon_name == 'errands-trash-full-symbolic'
+    end
+    application.window.sidebar.list_box.select_row(application.window.sidebar.trash_sidebar_row.row)
+    d.check('trash page is visible') { application.window.view_stack.visible_child_name == 'errands_trash_page' }
+    d.check('one trash item') { application.window.trash.trash_items.length == 1 }
+    d.check('it is Bread') { application.window.trash.trash_items.first.task_data.text == 'Bread' }
+  end
+
+  d.step('the trash page is realised on screen') do
+    d.shot('13a-trash-page')
+  end
+
+  d.step('restoring it empties the trash again') do
+    application.window.trash.on_trash_restore
+    d.check('record is no longer trashed') { Errands::UserData.tasks.find { |t| t.text == 'Bread' }.trash == false }
+    d.check('trash page is empty') { application.window.trash.trash_items.empty? }
+    d.check('the status page is back') { application.window.trash.status_page.visible? }
+  end
+
+  d.step('the empty trash page is realised on screen') do
+    d.shot('13b-trash-page-restored')
+  end
+
+  d.step('re-trashing it for the deletion that follows') do
+    application.window.sidebar.rows.first.task_list.tasks.find { |task| task.task_data.text == 'Bread' }.delete
+    d.check('record is trashed again') { Errands::UserData.tasks.find { |t| t.text == 'Bread' }.trash }
+  end
+
   d.step('delete the list') do
     application.window.sidebar.rows.first.row.activate_action('list_row.delete')
   end
@@ -233,5 +397,43 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     d.check('status page is showing') { application.window.view_stack.visible_child_name == 'errands_status_page' }
     d.check('list is marked deleted') { Errands::UserData.task_lists.all?(&:deleted) }
     d.shot('14-empty-again')
+  end
+
+  d.step('the about dialog opens from the app action') do
+    application.app.activate_action('about', nil)
+  end
+
+  d.step('the about dialog renders the app\'s own fields') do
+    dialog = application.window.root.visible_dialog
+    d.check('dialog is open') { !dialog.nil? }
+    d.check('it is the memoized about dialog') { dialog.equal?(application.window.about_dialog) }
+    d.check('application name is set') { dialog.application_name == 'Errands' }
+    d.check('version is set') { !dialog.version.to_s.empty? }
+    d.shot('15-about')
+    dialog.close
+  end
+
+  d.step('GOA credentials come back nil with no matching account configured') do
+    d.check('no GOA session is available in this headless run, and the lookup fails safely') do
+      Errands::Goa.get_goa_credentials('Nextcloud').nil?
+    end
+  end
+
+  d.step('the notifications daemon is registered and finds overdue tasks by its own rules') do
+    d.check('State holds the running daemon') { Errands::State.notifications.is_a?(Errands::Notifications) }
+    task_list = Errands::UserData.add_list('Notif-check')
+    Errands::UserData.add_task(
+      list_uid: task_list.uid,
+      uid: 'notif-check-task',
+      text: 'Overdue',
+      due_date: '20200101T000000',
+    )
+    d.check('an overdue, un-notified task is picked up') do
+      Errands::State.notifications.due_tasks.map(&:uid).include?('notif-check-task')
+    end
+    Errands::UserData.update_props(task_list.uid, 'notif-check-task', [:notified], [true])
+    d.check('a notified task is not picked up again') do
+      !Errands::State.notifications.due_tasks.map(&:uid).include?('notif-check-task')
+    end
   end
 end

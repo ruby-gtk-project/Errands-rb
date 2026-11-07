@@ -56,7 +56,7 @@ module Errands
     def tasks_data
       today = Date.today
       UserData.tasks.select do |t|
-        !t.deleted && !t.completed && !t.trash && t.due_date && (Date.parse(t.due_date) <= today)
+        !t.deleted && !t.completed && !t.trash && !t.due_date.to_s.empty? && (Date.parse(t.due_date) <= today)
       end
     end
 

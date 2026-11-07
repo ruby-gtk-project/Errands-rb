@@ -228,6 +228,9 @@ module Errands
       toggle_visibility(false)
       update_props([:trash], [true])
       complete_button.active = true
+      State.today_page.update_ui
+      State.trash_sidebar_row.update_ui
+      State.tags_page.update_ui
       task_list&.update_title
       if @parent.is_a?(Task)
         @parent.update_title

@@ -31,7 +31,7 @@ module Errands
     def due_tasks
       now = DateTime.now
       UserData.tasks.select do |task|
-        task.due_date && !task.deleted && !task.completed && !task.trash && !task.notified &&
+        !task.due_date.to_s.empty? && !task.deleted && !task.completed && !task.trash && !task.notified &&
           DateTime.parse(task.due_date) < now
       end
     end
