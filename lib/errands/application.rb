@@ -9,6 +9,7 @@ require_relative 'icons'
 require_relative 'logging'
 require_relative 'notes_dialog'
 require_relative 'notifications'
+require_relative 'plugins'
 require_relative 'settings'
 require_relative 'state'
 require_relative 'style'
@@ -57,6 +58,11 @@ module Errands
         State.application = app
         State.init
         Notifications.new.start
+        # Upstream imports PluginsLoader commented-out at this call site
+        # (`# from errands.lib.plugins import PluginsLoader`), but the class
+        # itself is live, uncommented code, so the port wires it in rather
+        # than leaving it dead.
+        @plugins_loader = PluginsLoader.new(app)
         app.add_window(window.build)
       end
 
