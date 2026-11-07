@@ -413,6 +413,31 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     dialog.close
   end
 
+  d.step('the preferences dialog opens from the app action') do
+    application.app.activate_action('preferences', nil)
+  end
+
+  d.step('toggling Launch on Startup re-runs the ashpd autostart check') do
+    dialog = application.window.root.visible_dialog
+    d.check('dialog is open') { !dialog.nil? }
+    d.check('it is the memoized preferences dialog') { dialog.equal?(application.window.preferences_dialog) }
+    before = File.exist?(Errands::Log.log_file) ? File.read(Errands::Log.log_file) : ''
+    d.check('ashpd check already ran once, at startup') do
+      before.include?('Application: ashpd has no Background portal')
+    end
+    row = dialog.launch_on_startup_row
+    row.active = !row.active?
+    d.check('the switch flips, and settings pick it up') do
+      row.active? == Errands::Settings.get('launch-on-startup')
+    end
+    after = File.read(Errands::Log.log_file)
+    d.check('toggling the switch calls Application.run_in_background again, which queries the real ashpd module') do
+      after.scan('Application: ashpd has no Background portal').length >
+        before.scan('Application: ashpd has no Background portal').length
+    end
+    dialog.close
+  end
+
   d.step('GOA credentials come back nil with no matching account configured') do
     d.check('no GOA session is available in this headless run, and the lookup fails safely') do
       Errands::Goa.get_goa_credentials('Nextcloud').nil?
