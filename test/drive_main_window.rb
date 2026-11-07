@@ -253,6 +253,28 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
     d.check('round trip keeps the name') { list.name == 'Shopping' }
     d.check('round trip keeps the tasks') { tasks.map(&:text).sort == %w[Bread Milk Rye] }
   end
+
+  d.step('importing that exported file through ImportDialog adds a second list') do
+    # The native Gtk::FileDialog chooser cannot be driven headlessly, so this
+    # exercises the import logic the dialog calls once the user has picked a
+    # file, the same way a real pick would hand it a Gio::File.
+    file = Gio::File.new_for_path(File.join(Dir.tmpdir, 'errands-export.ics'))
+    Errands::ImportDialog.new.send(:import, file)
+    d.check('a second sidebar row appears') { application.window.sidebar.rows.length == 2 }
+    d.check('its name is deduplicated against the existing list') do
+      application.window.sidebar.rows.map(&:name).uniq.length == 2
+    end
+    d.check('the imported list is in the data store') do
+      Errands::UserData.task_lists.reject(&:deleted).length == 2
+    end
+  end
+
+  d.step('deleting the imported list cleans up after the import check') do
+    imported = application.window.sidebar.rows.find { |row| row.name != 'Shopping' }
+    Errands::UserData.delete_list(imported.uid)
+    application.window.sidebar.remove_task_list(imported)
+    d.check('back to one sidebar row') { application.window.sidebar.rows.length == 1 }
+  end
   d.step('a known tag shows up in the toolbar popover') do
     Errands::UserData.add_tag('home')
     task = application.window.sidebar.rows.first.task_list.tasks.first
@@ -435,6 +457,57 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
       after.scan('Application: ashpd has no Background portal').length >
         before.scan('Application: ashpd has no Background portal').length
     end
+  end
+
+  d.step('picking the Dark theme applies it and is stored') do
+    dialog = application.window.preferences_dialog
+    dialog.theme_dark_check.active = true
+    d.check('style manager switched to dark') { Adwaita::StyleManager.default.color_scheme == 4 }
+    d.check('setting stored') { Errands::Settings.get('theme') == 4 }
+  end
+
+  d.step('switching new tasks to the top is stored') do
+    dialog = application.window.preferences_dialog
+    dialog.new_task_position_row.selected = 1
+    d.check('setting stored') { Errands::Settings.get('task-list-new-task-position-top') }
+  end
+
+  d.step('the sync page starts with credential rows hidden (provider disabled)') do
+    dialog = application.window.preferences_dialog
+    d.check('provider is Disabled') { dialog.sync_provider_row.selected.zero? }
+    d.check('url row hidden') { !dialog.sync_url_row.visible? }
+    d.check('username row hidden') { !dialog.sync_username_row.visible? }
+    d.check('password row hidden') { !dialog.sync_password_row.visible? }
+    d.check('test connection row hidden') { !dialog.test_connection_row.visible? }
+  end
+
+  d.step('picking Nextcloud as the sync provider reveals the credential rows') do
+    dialog = application.window.preferences_dialog
+    dialog.sync_provider_row.selected = 1
+    d.check('provider stored') { Errands::Settings.get('sync-provider') == 1 }
+    d.check('url row shown') { dialog.sync_url_row.visible? }
+    d.check('username row shown') { dialog.sync_username_row.visible? }
+    d.check('password row shown') { dialog.sync_password_row.visible? }
+    d.check('test connection row shown') { dialog.test_connection_row.visible? }
+  end
+
+  d.step('the sync page is realised on screen once it has settled') do
+    d.shot('15a-preferences-sync')
+  end
+
+  d.step('typing a password stores it in the secret backend for that provider') do
+    dialog = application.window.preferences_dialog
+    dialog.sync_password_row.text = 'sekrit'
+    d.check('the secret is stored under the Nextcloud provider') do
+      Errands::Settings.get_secret('Nextcloud').to_s == 'sekrit'
+    end
+  end
+
+  d.step('switching back to Disabled hides the credential rows again') do
+    dialog = application.window.preferences_dialog
+    dialog.sync_provider_row.selected = 0
+    d.check('url row hidden again') { !dialog.sync_url_row.visible? }
+    d.check('test connection row hidden again') { !dialog.test_connection_row.visible? }
     dialog.close
   end
 
