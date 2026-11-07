@@ -11,19 +11,23 @@ module Errands
   # "GtkWindow is not subtype of GtkShortcutsWindow"), so the same sections are
   # built with Adwaita::ShortcutsDialog, the widget that replaces it.
   #
-  # Upstream's "Sync", "Preferences" and "Toggle Details" entries are left out
-  # until the components behind them are ported: this dialog lists the
-  # accelerators the application actually binds.
+  # Upstream's "Toggle Details" entry is left out: the task-details panel it
+  # toggles has not been ported. "Sync" and "Preferences" are now ported
+  # (window.rb's ACTIONS binds both accelerators) and listed below.
   #
   class ShortcutsDialog < Adwaita::ShortcutsDialog
     SECTIONS = {
       'General' => [
         ['Show keyboard shortcuts', '<Control>question'],
+        ['Preferences', '<Control>comma'],
         ['Quit', '<Control>q <Control>w'],
       ],
       'Lists'   => [
         ['Add List', '<Control><Shift>A'],
         ['Import List', '<Control>I'],
+      ],
+      'Sync'    => [
+        ['Sync / Fetch Tasks', 'F5 <Control>f'],
       ],
     }.freeze
 
