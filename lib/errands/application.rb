@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'adwaita'
+require 'ashpd'
 
 require_relative 'attachments_dialog'
 require_relative 'data'
@@ -26,10 +27,16 @@ module Errands
   # Adwaita::Application is unusable from the Ruby bindings, so the application
   # object is a Gtk::Application; Adwaita is initialised explicitly, which
   # Adw.Application would otherwise do. Upstream's autostart request goes
-  # through the XDG portal; the `ashpd` gem binds the portals it ships
-  # (screenshot, open-uri, trash, settings, camera, account) but not the
-  # background/autostart one upstream uses here, so that request is left out
-  # rather than faked.
+  # through the XDG background portal (`Xdp::Portal#request_background` from
+  # libportal). `ashpd` is this app's one portal-binding gem, so it is queried
+  # for that portal at runtime rather than assuming either way from a comment:
+  # `Ashpd.const_defined?(:Background)` is false on the 0.1.1 release this app
+  # locks (`Ashpd.constants` is `[Account, Camera, OpenUri, Screenshot,
+  # Settings, Trash, VERSION]`; calling `Ashpd::Background` raises `NameError:
+  # uninitialized constant Ashpd::Background`). `run_in_background` below logs
+  # that and skips the request rather than faking it; if a future ashpd
+  # release adds the Background portal this check starts using it with no
+  # other change needed.
   #
   class Application
     def build
@@ -45,6 +52,32 @@ module Errands
 
     def window = @window ||= Window.new(app)
 
+    # Ported from upstream's `run_in_background` (errands/application.py):
+    # requests the background portal so the app can keep running (and,
+    # when "Launch on Startup" is enabled, autostart) after its window
+    # closes. Called at startup and again whenever the preferences dialog's
+    # autostart switch changes.
+    #
+    # A class method, not an instance method: `State.application` (which
+    # the preferences dialog's switch reaches for) holds the raw
+    # `Gtk::Application` from `app` above, not this `Errands::Application`
+    # wrapper — and this call needs no instance state, only Settings/Log/
+    # Ashpd, all already module-level.
+    class << self
+      def run_in_background
+        Log.debug('Application: Checking autostart')
+        if Ashpd.const_defined?(:Background)
+          Ashpd::Background.request(Settings.get('launch-on-startup'))
+        else
+          Log.info(
+            'Application: ashpd has no Background portal ' \
+            "(Ashpd.constants is #{Ashpd.constants.sort}); " \
+            'autostart request skipped',
+          )
+        end
+      end
+    end
+
     private
 
       def startup
@@ -57,6 +90,7 @@ module Errands
         Style.install
         State.application = app
         State.init
+        Application.run_in_background
         Notifications.new.start
         # Upstream imports PluginsLoader commented-out at this call site
         # (`# from errands.lib.plugins import PluginsLoader`), but the class

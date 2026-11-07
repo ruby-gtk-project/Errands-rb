@@ -14,9 +14,12 @@ module Errands
   # (an Adw.PreferencesDialog with a General page and a Sync page).
   #
   # Upstream's "Launch on Startup" switch calls back into
-  # State.application.run_in_background, which goes through the XDG
-  # background portal; `ashpd` does not bind that portal (see
-  # application.rb), so the switch here only stores the setting.
+  # State.application.run_in_background (upstream's ErrandsApplication is
+  # the Adw.Application itself); the Ruby port's `Application` is a
+  # separate wrapper object, not what `State.application` holds, so this
+  # calls `Application.run_in_background` directly. See application.rb for
+  # what that call does given ashpd's current, Background-portal-less
+  # release.
   #
   class PreferencesDialog < Adwaita::PreferencesDialog
     PROVIDER_NAMES = ['Disabled', 'Nextcloud', 'CalDAV'].freeze
@@ -174,6 +177,7 @@ module Errands
         row.subtitle = 'Launch application when user logs in'
         row.icon_name = 'errands-progressbar-symbolic'
         Settings.bind('launch-on-startup', row, 'active')
+        row.signal_connect('notify::active') { Application.run_in_background }
       end
     end
 
