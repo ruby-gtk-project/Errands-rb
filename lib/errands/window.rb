@@ -7,10 +7,12 @@ require_relative 'data'
 require_relative 'import_dialog'
 require_relative 'loading_page'
 require_relative 'logging'
+require_relative 'preferences_dialog'
 require_relative 'settings'
 require_relative 'shortcuts_dialog'
 require_relative 'sidebar'
 require_relative 'state'
+require_relative 'sync'
 require_relative 'tags'
 require_relative 'today'
 require_relative 'trash'
@@ -21,9 +23,6 @@ module Errands
   #
   # Ported from the Window class in upstream's errands/widgets/window.py.
   #
-  # The syncing page and the sync action arrive with the components behind
-  # them; the window wires what exists.
-  #
   class Window
     MIN_WIDTH = 360
     MIN_HEIGHT = 200
@@ -31,11 +30,13 @@ module Errands
     COLOR_SCHEMES = %i[default force_light prefer_light prefer_dark force_dark].freeze
 
     ACTIONS = {
-      'import'    => ['<primary>i'],
-      'about'     => [],
-      'shortcuts' => ['<primary>question'],
-      'add-list'  => ['<primary><Shift>a'],
-      'quit'      => ['<primary>q', '<primary>w'],
+      'import'      => ['<primary>i'],
+      'about'       => [],
+      'shortcuts'   => ['<primary>question'],
+      'add-list'    => ['<primary><Shift>a'],
+      'preferences' => ['<primary>comma'],
+      'sync'        => ['F5', '<primary>f'],
+      'quit'        => ['<primary>q', '<primary>w'],
     }.freeze
 
     def initialize(application)
@@ -64,6 +65,7 @@ module Errands
           stack.add_titled(today.build, 'errands_today_page', 'Today')
           stack.add_titled(tags.build, 'errands_tags_page', 'Tags')
           stack.add_titled(trash.build, 'errands_trash_page', 'Trash')
+          stack.add_titled(syncing_page_view.build, 'errands_syncing_page', 'Syncing')
         end
 
         status_page_button.signal_connect('clicked') { sidebar.add_list }
@@ -127,6 +129,8 @@ module Errands
     # selected.
     def status_page_view = @status_page_view ||= StatusPageView.new(status_page_button)
 
+    def syncing_page_view = @syncing_page_view ||= SyncingPageView.new
+
     def status_page_button
       @status_page_button ||= Gtk::Button.new(label: 'Create List').tap do |button|
         button.halign = :center
@@ -145,6 +149,8 @@ module Errands
 
     def shortcuts_dialog = @shortcuts_dialog ||= ShortcutsDialog.new.tap(&:build)
 
+    def preferences_dialog = @preferences_dialog ||= PreferencesDialog.new.tap(&:build)
+
     private
 
       def finish_load
@@ -152,6 +158,7 @@ module Errands
         State.split_view = split_view
         view_stack.visible_child_name = 'errands_status_page'
         sidebar.load_task_lists
+        Sync.sync
       end
 
       def remember_window_state
@@ -187,7 +194,17 @@ module Errands
         when 'about' then about_dialog.present(window)
         when 'shortcuts' then shortcuts_dialog.present(window)
         when 'add-list' then sidebar.add_list
+        when 'preferences' then preferences_dialog.present(window)
+        when 'sync' then run_sync_action
         when 'quit' then @application.quit
+        end
+      end
+
+      def run_sync_action
+        if Settings.get('sync-provider').zero?
+          add_toast('Sync is disabled')
+        else
+          Sync.sync
         end
       end
   end
@@ -237,6 +254,39 @@ module Errands
         page.title = 'No Task Lists'
         page.description = 'Create new or import existing one'
         page.icon_name = 'io.github.mrvladus.List-symbolic'
+      end
+    end
+  end
+
+  # SyncingPageView is the view stack page shown while the first sync of a
+  # session is still running.
+  #
+  # Ported from the errands_syncing_page child of the view stack in
+  # upstream's errands/widgets/window.py.
+  #
+  class SyncingPageView
+    def build
+      toolbar_view.tap do |view|
+        view.add_top_bar(header_bar)
+        view.content = status_page
+      end
+    end
+
+    # Memoized widget methods
+
+    def toolbar_view = @toolbar_view ||= Adwaita::ToolbarView.new
+
+    def header_bar
+      @header_bar ||= Adwaita::HeaderBar.new.tap do |bar|
+        bar.show_title = false
+      end
+    end
+
+    def status_page
+      @status_page ||= Adwaita::StatusPage.new.tap do |page|
+        page.title = 'Syncing'
+        page.description = 'First synchronization is running'
+        page.icon_name = 'errands-sync-symbolic'
       end
     end
   end

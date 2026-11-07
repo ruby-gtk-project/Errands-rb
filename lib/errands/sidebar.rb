@@ -20,10 +20,6 @@ module Errands
   #
   # Ported from the Sidebar class in upstream's errands/widgets/sidebar.py.
   #
-  # Two things upstream shows here belong to components this port has not
-  # reached yet, and are left out rather than faked: the syncing spinner, and
-  # the "Sync / Fetch Tasks" and "Preferences" menu items.
-  #
   # Upstream also gives its add-list button a managed Gtk.ShortcutController so
   # Ctrl+Shift+A activates it; Gtk::ShortcutTrigger.parse_string has no Ruby
   # binding, so the window binds that accelerator to an application action
@@ -49,6 +45,7 @@ module Errands
             bar.title_widget = title_label
             bar.pack_start(add_list_button)
             bar.pack_end(menu_button)
+            bar.pack_end(sync_indicator_revealer)
 
             add_list_button.signal_connect('clicked') { add_list }
           end
@@ -157,6 +154,10 @@ module Errands
       end
     end
 
+    # Shows or hides the header's syncing spinner. Sync.sync calls this
+    # through Utils.idle_add, so it always runs on the UI thread.
+    def toggle_sync_indicator(on) = sync_indicator_revealer.reveal_child = on
+
     # Memoized widget methods
 
     def bin = @bin ||= Adwaita::Bin.new
@@ -180,6 +181,7 @@ module Errands
 
     def menu_model
       @menu_model ||= Gio::Menu.new.tap do |menu|
+        menu.append_section(nil, sync_section)
         menu.append_section(nil, import_section)
         menu.append_section(nil, application_section)
       end
@@ -191,6 +193,22 @@ module Errands
         button.tooltip_text = 'Main Menu'
         button.icon_name = 'open-menu-symbolic'
         button.menu_model = menu_model
+      end
+    end
+
+    def sync_indicator_revealer
+      @sync_indicator_revealer ||= Gtk::Revealer.new.tap do |revealer|
+        revealer.transition_type = :crossfade
+        revealer.transition_duration = 200
+        revealer.reveal_child = false
+        revealer.child = sync_spinner
+      end
+    end
+
+    def sync_spinner
+      @sync_spinner ||= Gtk::Spinner.new.tap do |spinner|
+        spinner.spinning = true
+        spinner.tooltip_text = 'Syncing...'
       end
     end
 
@@ -228,6 +246,12 @@ module Errands
 
     private
 
+      def sync_section
+        Gio::Menu.new.tap do |section|
+          section.append('Sync / Fetch Tasks', 'app.sync')
+        end
+      end
+
       def import_section
         Gio::Menu.new.tap do |section|
           section.append('Import Task List', 'app.import')
@@ -236,6 +260,7 @@ module Errands
 
       def application_section
         Gio::Menu.new.tap do |section|
+          section.append('Preferences', 'app.preferences')
           section.append('Keyboard Shortcuts', 'app.shortcuts')
           section.append('About Errands', 'app.about')
           section.append('Quit', 'app.quit')

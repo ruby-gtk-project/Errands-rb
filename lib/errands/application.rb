@@ -12,6 +12,8 @@ require_relative 'notifications'
 require_relative 'settings'
 require_relative 'state'
 require_relative 'style'
+require_relative 'sync'
+require_relative 'translations'
 require_relative 'window'
 
 module Errands

@@ -47,6 +47,20 @@ module Errands
         value
       end
 
+      # Upstream stores the sync password through libsecret, keyed by the
+      # provider's account name ("Nextcloud" or "CalDAV"). The Ruby bindings
+      # expose no Secret Service client, and this module already keeps every
+      # other setting in plaintext JSON on disk rather than reaching for
+      # GSettings, so the password lives in that same file under its own key
+      # rather than introducing a second, half-faked storage mechanism.
+      def get_secret(account) = values["secret:#{account}"]
+
+      def set_secret(account, password)
+        values["secret:#{account}"] = password
+        write
+        password
+      end
+
       # Mirrors GSettings.bind: the widget property takes the stored value now,
       # and every later change of that property is written back.
       def bind(key, widget, prop, invert: false)

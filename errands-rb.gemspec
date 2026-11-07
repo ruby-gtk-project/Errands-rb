@@ -119,6 +119,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency("ashpd", "~> 0.1")
   spec.add_dependency("goa-rb", "~> 1.0")
 
+  # Runtime — WebDAV/CalDAV XML for the sync providers. Ruby 3.4 dropped
+  # rexml from the modules `require` finds by default; it is still a real
+  # gem (standard library, not bundled), so it is declared like any other.
+  spec.add_dependency("rexml", "~> 3.3")
+
   # Dev, Test, & Release Tasks
   spec.add_development_dependency("kettle-dev", "~> 3.1", ">= 3.1.26")             # ruby >= 3.4
 
