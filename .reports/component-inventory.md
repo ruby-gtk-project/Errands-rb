@@ -667,7 +667,7 @@ with `Adwaita::ShortcutsDialog`.
 
 ---
 
-## 2026-11-07 re-survey
+## 2026-11-07 re-survey (updated same day, after plugins + ashpd drive)
 
 Re-checked `lib/errands/` against this inventory's "Port status roll-up." Every
 row the 2026-11-02 pass marked `**no**` now has a file: `today.rb`,
@@ -700,19 +700,40 @@ Not re-verified in this pass: actually loading the gems
 `require "goa-rb"; puts Goa.constants.size'`). The wiring looks correct by
 inspection only.
 
-### New gap found: `errands/lib/plugins.py` has no port
+### Gap closed: `errands/lib/plugins.py` → `lib/errands/plugins.rb`
 
-Upstream's `PluginsLoader` (scans a user plugins directory, installs each
-plugin's `requirements.txt`, imports its `plugin.py`, adds its icon resources)
-has no `lib/errands/plugins.rb` and nothing in `lib/errands/application.rb`
-loads anything from a plugins directory. This is different from the earlier
-note in this document that `errands/lib/plugins.py` "is commented out at its
-only call site upstream and is not ported" — re-reading `origin/main`, the
-plugin loader is **not** commented out; `PluginsLoader` is a real, live class
-with no dead call site found in this pass. Whoever wrote the earlier note
-should double check that claim before anyone relies on it again. Either way,
-it is still missing from the port and should be tracked as a real gap, not
-waved off.
+Ported after this re-survey flagged it: `PluginBase` and `PluginsLoader` now
+exist in `lib/errands/plugins.rb` and are wired into
+`lib/errands/application.rb#startup`. Ruby-side shape: a `plugin.rb` entry
+file instead of `plugin.py`, a plugin-local `Gemfile` instead of
+`requirements.txt`, `require` instead of `importlib.import_module`. The
+earlier claim in this document that upstream's call site is commented out
+was wrong — confirmed again here — and is left struck through above rather
+than silently deleted.
+
+### Background portal (blocker 3) — checked, not resolved by the gem
+
+`lib/errands/application.rb#run_in_background` now `require`s `ashpd` and
+calls it for real (`Ashpd.const_defined?(:Background)` /
+`Ashpd.constants`), from both startup and the preferences dialog's "Launch
+on Startup" switch — confirmed live, not a rescued `NameError` and not a
+drive-script stub, by `test/drive_main_window.rb`'s added step (flips the
+switch, asserts the logged call count increases; 145/145 checks, three
+consecutive `DRIVE OK` runs). The result of that real call: **ashpd 0.1.1
+binds `Account`, `Camera`, `OpenUri`, `Screenshot`, `Settings` and `Trash`,
+but not the `Background` portal** upstream's autostart request needs, so the
+request is logged and skipped. Blocker 3 therefore still stands as a gem
+limitation, not a missing-wiring defect — the wiring is correct and does the
+right thing with what the gem currently exposes.
+
+### Gem wiring — re-verified end to end
+
+`ashpd` and `goa-rb` are both declared in `errands-rb.gemspec`, both listed
+in `nix/Gemfile`/`nix/gemset.nix`, and both actually `require`d and called
+from live code paths: `ashpd` from `application.rb` (above) and `goa-rb`'s
+`Goa` from `lib/errands/goa.rb` and `preferences_dialog.rb`'s provider
+picker. No gemspec runtime dependency was found with zero callers in this
+pass.
 
 ### Shortcuts dialog substitution — flag, not a fix
 
