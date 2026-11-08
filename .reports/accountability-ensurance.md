@@ -1,98 +1,101 @@
-# Errands-rb — accountability ensurance (2026-11-07)
+# Errands-rb — accountability ensurance (2026-11-08)
 
-Grepped `lib/`, `exe/`, `.reports/` and (would have grepped) `PORTING.md` for
-`TODO`, `FIXME`, `not implemented`, `for now`, `in a future`. No
-`PORTING.md` exists in this repo — not a gap in itself, just noting the file
-named in the brief isn't there. The literal grep came back clean (the only
-hits were `VTODO`, the iCalendar component name, a false positive). A clean
-grep is not the same as a clean port; three real gaps found by running things
-and reading code, not by grepping for an admission string, follow.
+Grepped `lib/`, `exe/`, `.reports/` and `PORTING.md` (still does not exist —
+not a gap in itself, just noted again) for `TODO`, `FIXME`, `not
+implemented`, `for now`, `in a future`. Clean except for `VTODO`/`TODOS_BODY`
+(the iCalendar component name and a CalDAV XML constant — false positives).
+A clean grep is still not the same as a clean port. This round's job was
+specifically to check whether last round's three findings got fixed, excused,
+or silently dropped, and to look for new instances of the same pattern.
 
-## 1. The runtime gate claimed for this round does not reproduce — the most serious finding
+## 1. Last round's most serious finding — the runtime gate not reproducing — is now independently confirmed FIXED, not just re-claimed
 
-The task's stated gate: `drive_ok=true, 140 checks passed, 0 failed, 51
-components`. Ran `xvfb-run -a ruby test/drive_main_window.rb` on `HEAD`
-(`ceb3d6e8`) three separate times in this audit:
+2026-11-07's top finding was that the stated gate (140/140, 51 components)
+did not reproduce: three runs all failed one check. This round's stated gate
+is `drive_ok=true, 165 checks passed, 0 failed, 34 components`. Ran
+`xvfb-run -a ruby test/drive_main_window.rb` twice, independently, in this
+audit: **165 of 165 checks passed, DRIVE OK, both times**, including the
+exact check (`widget is hidden`, in the trash step) that failed every time
+last round. This is the good outcome the accountability process exists to
+produce: a false-green was flagged, and the underlying bug got fixed before
+the next round, not argued away. Recorded here so it isn't lost: the fix is
+real and re-verified in this pass, not taken on the word of the commit log.
 
-```
-139 of 140 checks passed
-  failed check: widget is hidden
-DRIVE FAILED (1)
-```
+**One part of the stated gate still cannot be traced to anything the tools
+print**: "34 components." No log line, summary, or test-file string in
+`test/drive_main_window.rb` or `test/gtk_driver.rb` contains the word
+"component." The check-count claim is now solid; the component-count claim
+is asserted with the same lack of grounding last round's "51 components"
+had, and should not be repeated as verified just because the number next to
+it (165) now checks out. See `test-parity.md`.
 
-Identical on all three runs — not a flake that passed on retry. Whoever or
-whatever produced "140 passed, 0 failed" for this round either ran a
-different commit, a different environment, or the number is simply wrong.
-**This is the false-green case the task asked to watch for, and it is sitting
-in the task's own framing of this round, not just in a report a port-writer
-left behind.** Treat the stated gate as unverified until someone reruns it
-and gets 140/140 twice.
+## 2. The dead localization engine — still a live finding, unchanged, re-verified today
 
-## 2. A fully-built, individually-correct subsystem that is never called — a Potemkin feature
+`lib/errands/translations.rb` is still fully built, still loads cleanly,
+still tested-in-isolation working code, and is still called from **zero**
+sites across all current `lib/errands/*.rb` files (re-ran the exact greps
+from last round: `Translations\.(gettext|pgettext|nplural)\(` → 0 matches).
+Nothing between 2026-11-07 and today touched this. If any future report
+claims "translations: ported" or "i18n: done" on the strength of this file's
+existence or the `.po` catalogues matching upstream's 150 msgids
+(they do, verified again this round — that part is genuinely fine), that
+claim is false, for the same reason it was false last round: the data is
+right, the engine works, and the UI never calls either. See
+`translation-parity.md`.
 
-`lib/errands/translations.rb` is 205 lines of careful, tested-in-this-audit,
-working `.po`-parsing/gettext code: `msgctxt`, plural forms, continuation
-lines, C escapes, locale candidate resolution. It is `require_relative`d from
-`application.rb`. It is called from **nowhere** — zero call sites across all
-32 files in `lib/errands/`. Every translatable string in the app is a bare
-English literal. Full detail in `translation-parity.md`.
+## 3. The GtkSourceView gap — still documented, still not escalated or fixed
 
-This is worse than an admitted gap, because nothing announces it: the module
-exists, loads cleanly, has a docstring explaining upstream's gettext usage in
-convincing detail, and would pass a shallow "does `translations.rb` exist and
-look right" check. Only tracing whether its methods are ever invoked from the
-UI surfaces that it does nothing at runtime. If a future report says
-"translations: ported" on the strength of this file's existence, that claim
-is false, and this is exactly the shape of false claim the task asked to be
-adversarial about.
+Same as last round: `notes_dialog.rb`'s comment accurately names the
+substitution (plain `Gtk::TextView` for `GtkSource.View`) and the reason
+(`gtksourceview` typelib absent from `flake.nix`'s `gtkStack`), and the fix
+(`gtksourceview5` is an ordinary nixpkgs package) remains undone. No change
+since last round; carried forward rather than re-discovered, to avoid
+implying it is new.
 
-## 3. A documented gap whose root cause was never escalated to a fix
+## 4. New this round: a resolved-sounding "blocker" that quietly shipped as a weaker substitute, and no report said so until now
 
-`lib/errands/notes_dialog.rb`'s own comment candidly says GtkSourceView "has
-no binding in this port's dev shell," and substitutes a plain `Gtk::TextView`.
-This comment is honest, not evasive — it names the real upstream widget, the
-real behavioural loss (markdown highlighting, dark-mode scheme, line
-numbers), and the real reason. Verified the reason is accurate: `flake.nix`'s
-`gtkStack` genuinely has no `gtksourceview` package or typelib. What was never
-done: `gtksourceview5` and its introspection data are ordinary nixpkgs
-packages, addable to that list, after which the GtkSource binding would be
-available and this gap would close. The comment documents the gap instead of
-either closing it or opening a tracked follow-up — "for now" in spirit, even
-though the literal phrase isn't there to grep for. This is the task's own
-example of the pattern to watch for: a gap excused by prose rather than
-tracked as work.
+`component-inventory.md` still lists "`Secret` typelib is not in the dev
+shell" under **Blockers**, written 2026-11-02, with no later note that it
+was worked around. In the meantime, `lib/errands/settings.rb` shipped
+`get_secret`/`set_secret` that store the sync password in the same plaintext
+JSON file as every other setting — a real, working, honestly-commented
+substitution, but one with a different and weaker security property than
+upstream's libsecret-backed storage. The same file's support-module table
+(line 569) still calls this "the libsecret-backed `get_secret`/`set_secret`,"
+which is no longer an accurate description of the code.
 
-## 4. The existing `.reports/component-inventory.md` has already caught and corrected one of its own false claims — flagged here as a good sign, not a new issue
+This is exactly the shape of gap the task asked to be adversarial about,
+even though the literal phrase "for now" does not appear anywhere near it:
+a real limitation, honestly commented at the code level, that never got
+surfaced as a *behavioural* finding in any `component-parity.md` until this
+round, and whose cross-reference in the inventory document is now stale and
+would mislead a reader who trusts the table over the code. Flagged in detail
+in `component-identification-audit.md` and `component-parity.md`.
 
-That document's 2026-11-07 section explicitly retracts an earlier claim in
-the same file that `errands/lib/plugins.py` "is commented out at its only call
-site upstream," after re-reading upstream and finding the claim false, and
-separately flags its own "ShortcutsWindow is unusable" claim as needing
-independent re-verification rather than being inherited silently. Both checked
-in this audit: the plugins loader is now genuinely ported
-(`lib/errands/plugins.rb`, wired from `application.rb`), and
-`Gtk::ShortcutsWindow.new` does genuinely raise
-(`TypeError: GtkWindow is not subtype of GtkShortcutsWindow`) in this binding,
-confirming both of that document's conclusions. Recorded here because the
-task explicitly asked to check whether gaps get excused rather than tracked,
-and self-correcting a prior false claim, with the reasoning shown, is the
-opposite failure mode from the ones above — worth distinguishing from them
-rather than burying it in the same bucket.
+## 5. A test name that claims more than its implementation delivers
 
-## 5. No unit tests exist for any non-UI logic, and that absence is not stated anywhere as a limitation
+`test/drive_main_window.rb`'s step `[70]`, titled "typing a password stores
+it in the secret backend for that provider," passes — correctly, the value
+round-trips — but exercises plaintext JSON storage, not a secret backend
+(see #4). A passing, correctly-asserting test with an overclaiming name is a
+small instance of the same risk as a false-green report: anyone skimming
+drive output for reassurance about the password's security reads language
+that isn't true. Not a bug in the check itself, but worth naming so the test
+name gets fixed alongside the underlying gap, not left to drift further from
+what it actually verifies.
 
-`spec/` has zero spec files (verified: `0 examples, 0 failures` from a real
-run). The `.po` parser, the CalDAV/Nextcloud providers, and the iCal
-read/write round-trip have never been exercised by anything except, for the
-parts the drive script happens to touch, the end-to-end driver — and the
-translations engine, as established above, is touched by *nothing at all*,
-not even indirectly, because the UI never calls it. "The drive script passes"
-(when it does) is being asked to stand in for test coverage it does not
-provide for code the UI doesn't reach. See `test-parity.md`.
+## 6. No unit tests for non-UI logic — unchanged, still unstated as a limitation anywhere but here
+
+`spec/` still has zero spec files; re-ran it today, `0 examples, 0 failures`.
+The `.po` parser, both sync providers, and the iCal round-trip remain
+exercised only indirectly (sync providers: not even that — see
+`test-parity.md`) by the drive script. Unchanged from last round.
 
 ## Verdict
 
-`clean: true` is not warranted. Three independent, confirmed issues — a
-runtime gate that doesn't reproduce, a dead-code localization layer presented
-by its own docstring as real support, and an environment gap documented but
-never fixed or tracked — plus zero unit-test coverage of non-UI logic.
+One of three 2026-11-07 findings is genuinely resolved and independently
+re-verified in this pass (the runtime gate). Two are unchanged (dead
+translation engine, GtkSourceView substitution). Two new findings are added:
+a stale "blocker" that shipped as a silent weaker substitute with its own
+inventory entry now inaccurate, and a test name overclaiming a security
+property its implementation doesn't have. `clean: true` is not warranted.

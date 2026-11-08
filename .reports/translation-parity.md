@@ -1,71 +1,81 @@
-# Errands-rb — translation parity (2026-11-07)
+# Errands-rb — translation parity (2026-11-08)
 
-## Headline finding: zero msgids survive, despite a full, working i18n engine existing in the tree
+Re-verification of the 2026-11-07 finding, against today's `HEAD`
+(`4beb4696`). The commits since then (ashpd wiring, shortcuts-dialog
+additions, drive-harness extension, a component inventory pass) touch
+neither `translations.rb` nor any widget file's string literals, and the
+re-check below confirms the finding is unchanged: **still zero msgids wired
+up, same shape of gap, nothing fixed.**
 
-Upstream's `po/errands.pot` has **150 `msgid`s**, extracted from `_("...")`,
-`C_("...", "...")` and plural `ngettext(...)` calls across the Python source,
-covering 30 locales (`po/LINGUAS`). All 150 msgids and all 31 `.po`/`.pot`
-files were copied into the port's `po/` directory unchanged (confirmed:
-`po/fr.po` has `msgid "Cancel" / msgstr "Annuler"`, matching upstream).
+## Do the catalogues still match upstream?
 
-The port also has a genuinely well-built, from-scratch gettext-compatible
-engine: `lib/errands/translations.rb` (205 lines) parses `msgctxt`, `msgid`,
-`msgid_plural`, indexed `msgstr[n]`, continuation lines and C string escapes,
-selects a `.po` file from `LC_ALL`/`LC_MESSAGES`/`LANG`, and exposes
-`gettext`, `pgettext` and `nplural`. Tested directly in this audit — it
-works correctly:
+```
+grep -c '^msgid' po/errands.pot          → 150
+git show origin/main:po/errands.pot | grep -c '^msgid'  → 150
+diff <(sort msgids from port) <(sort msgids from upstream)  → empty
+```
+
+All 150 msgids are present, byte-identical, in both the port's and upstream's
+`.pot`. 31 `.po`/`.pot` files exist under `po/`, matching upstream's
+`po/LINGUAS` (30 locales + the template). The catalogue data itself has not
+regressed.
+
+## Headline finding, unchanged: zero msgids survive at runtime, despite a working i18n engine existing in the tree
+
+`lib/errands/translations.rb` (205 lines) is a genuine, correct
+gettext-compatible engine: `msgctxt`, `msgid_plural`/indexed `msgstr[n]`,
+continuation lines, C-string escapes, locale resolution from
+`LC_ALL`/`LC_MESSAGES`/`LANG`. Re-tested directly today:
 
 ```
 LANG=fr Errands::Translations.gettext("Cancel")  => "Annuler"
-LANG=fr Errands::Translations.gettext("Notes")   => "Notes"   (same word in fr)
 ```
 
-**But nothing in the application calls it.** Grepped every file under
-`lib/errands/` (32 files) for `Translations.gettext(`, `Translations.pgettext(`,
-`Translations.nplural(`, or any bare `_(`/`gettext(`/`pgettext(` call:
+It still works correctly in isolation. And it is still called from
+**nowhere** in the application:
 
 ```
-grep -rn "Translations\.\(gettext\|pgettext\|nplural\)(" lib/errands/*.rb   → 0 matches
-grep -rln "Translations" lib/errands/*.rb                                  → translations.rb only
+grep -rn "Translations\.\(gettext\|pgettext\|nplural\)(" lib/errands/*.rb
+→ 0 matches (today, same as 2026-11-07)
+
+grep -rln "Translations" lib/errands/*.rb
+→ lib/errands/translations.rb only — no other file even requires it. (Note:
+  application.rb's require_relative is still present, loading the module
+  without using it — see accountability-ensurance.md.)
 ```
 
-`lib/errands/application.rb` does `require_relative 'translations'`
-(line 17) — the module is loaded — and then never references it again.
-Spot-checked the widest, most translatable surface in the app,
-`preferences_dialog.rb` (every row title/subtitle: "System", "Light", "Dark",
-"Add new Tasks", "Show Notifications", "Run in Background", "Hide the
-application window instead of closing it", "Launch on Startup", "Launch
-application when user logs in", "Sync Provider", "Server URL", "Username",
-"Password", "Test Connection"): every one is a bare Ruby string literal
-assigned directly to `row.title =` / `row.subtitle =`, upstream's `_("...")`
-wrapper simply dropped on the floor during the port. This is the pattern
-throughout every widget file checked, not an isolated miss in one dialog.
+Every title/subtitle/label/toast/tooltip checked across `preferences_dialog.rb`,
+`shortcuts_dialog.rb`, `window.rb`, `add_list_dialog.rb`, `notes_dialog.rb`
+and the others is still a bare Ruby string literal. Spot re-checked
+`preferences_dialog.rb`'s full row-title/subtitle list (System, Light, Dark,
+Add new Tasks, Show Notifications, Run in Background, "Hide the application
+window instead of closing it", Launch on Startup, "Launch application when
+user logs in", Sync Provider, Server URL, Username, Password, Test
+Connection) — same literals, same absence of any `Translations.*` wrapper,
+as last round.
 
-## What this means concretely
+## What this means concretely, unchanged
 
 Set `LANG=fr` (or any of the other 29 locales shipped in `po/`) and run the
-app: **every string in the UI stays in English.** The `.po` files are present,
-correctly formatted, and would work if wired up — this is not a missing-data
-problem, it is a missing-wiring problem. Running the app with a non-English
-locale set produces an experience with 0 of 150 msgids actually localized,
-against an upstream that localizes all of them.
+app: every string in the UI stays in English. 0 of 150 msgids are actually
+localized at runtime, against an upstream that localizes all of them through
+`_("...")` / `C_(...)` / `ngettext(...)`.
 
-## Why this matters beyond the raw count
+## Why this still matters beyond the raw count
 
-This is the kind of gap that a components-only audit (grep for `Adw.EntryRow`,
-count dialogs) will never catch, because every widget *exists* with the
-*correct English text* — the component inventory and component-parity report
-both score this area clean on structure. Only checking whether the
-translation path is actually reachable from a widget surfaces it. Treat
-"the `po/` files are present" and "translation support exists" as two
-separate claims from now on; only the first is currently true.
+This remains the kind of gap a components-only audit will not catch on its
+own: every widget exists, with correct English text, so a structural
+component-parity pass can score this area clean. Only tracing whether the
+translation path is reachable from a widget surfaces the gap. The catalogue
+files being present and correct, and the translation engine working in
+isolation, are both necessary but neither is sufficient — and the port has
+both of those and is still at 0/150 wired.
 
-## Fix shape (not applied in this audit — audit is read-only)
+## Fix shape (still not applied — audit is read-only)
 
-Every `.title = "literal"` / `.subtitle = "literal"` / string passed to a
-label, dialog, toast, tooltip, or `AccessibleProperty` across `lib/errands/`
-needs to become `Translations.gettext("literal")` (or `pgettext` where
-upstream used `C_`/`pgettext`, or `nplural` where upstream used `ngettext`),
-matching the exact upstream call site so the existing `.po` catalogues resolve
-correctly. This is a mechanical but large change — 150 msgids, scattered
-across ~30 files — not a small follow-up.
+Unchanged from last round: every `.title = "literal"` / `.subtitle =
+"literal"` / label / toast / tooltip / `AccessibleProperty` string across
+`lib/errands/` needs to become `Translations.gettext(...)` /
+`Translations.pgettext(...)` / `Translations.nplural(...)`, matching the
+exact upstream call so the existing `.po` catalogues resolve. ~150 msgids
+across ~30 files; no part of this was done between 2026-11-07 and today.
