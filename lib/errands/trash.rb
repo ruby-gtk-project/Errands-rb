@@ -7,6 +7,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
 require_relative 'trash_item'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -112,8 +113,8 @@ module Errands
 
     def on_trash_clear
       ConfirmDialog.show(
-        'Tasks will be permanently deleted',
-        'Delete',
+        Translations.gettext('Tasks will be permanently deleted'),
+        Translations.gettext('Delete'),
         :destructive,
       ) do |response|
         if response == 'confirm'
@@ -140,11 +141,11 @@ module Errands
 
     def header_bar = @header_bar ||= Adwaita::HeaderBar.new
 
-    def window_title = @window_title ||= Adwaita::WindowTitle.new('Trash', '')
+    def window_title = @window_title ||= Adwaita::WindowTitle.new(Translations.gettext('Trash'), '')
 
     def clear_button
       @clear_button ||= Gtk::Button.new.tap do |button|
-        button.tooltip_text = 'Clear'
+        button.tooltip_text = Translations.gettext('Clear')
         button.icon_name = 'errands-trash-symbolic'
         button.valign = :center
         button.add_css_class('flat')
@@ -153,7 +154,7 @@ module Errands
 
     def restore_button
       @restore_button ||= Gtk::Button.new.tap do |button|
-        button.tooltip_text = 'Restore'
+        button.tooltip_text = Translations.gettext('Restore')
         button.icon_name = 'errands-restore-symbolic'
         button.valign = :center
         button.add_css_class('flat')
@@ -164,8 +165,8 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'Empty Trash'
-        page.description = 'No deleted items'
+        page.title = Translations.gettext('Empty Trash')
+        page.description = Translations.gettext('No deleted items')
         page.icon_name = 'errands-trash-symbolic'
         page.vexpand = true
         page.add_css_class('compact')

@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'datetime_picker'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # DatetimeDialog edits one task's start and due dates.
@@ -18,7 +19,7 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.title = 'Date and Time'
+        dialog.title = Translations.gettext('Date and Time')
         dialog.follows_content_size = true
         dialog.child = toolbar_view
 
@@ -31,14 +32,14 @@ module Errands
           view_stack.tap do |stack|
             stack.add_titled_with_icon(
               due_scroller,
-              'Due',
-              'Due',
+              Translations.gettext('Due'),
+              Translations.gettext('Due'),
               'errands-calendar-symbolic',
             )
             stack.add_titled_with_icon(
               start_scroller,
-              'Start',
-              'Start',
+              Translations.gettext('Start'),
+              Translations.gettext('Start'),
               'errands-calendar-symbolic',
             )
 

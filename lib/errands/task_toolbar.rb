@@ -8,6 +8,7 @@ require_relative 'logging'
 require_relative 'state'
 require_relative 'titled_separator'
 require_relative 'toolbar_tag_row'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -59,7 +60,7 @@ module Errands
           box.append(custom_priority_button)
 
           priority_list.tap do |list|
-            PRIORITY_PRESETS.each { |label, css_class, _| list.append(priority_row(label, css_class)) }
+            PRIORITY_PRESETS.each { |label, css_class, _| list.append(priority_row(Translations.gettext(label), css_class)) }
             list.signal_connect('row-activated') { |_, row| on_priority_selected(row) }
           end
         end
@@ -113,7 +114,7 @@ module Errands
       @date_time_content ||= Adwaita::ButtonContent.new.tap do |content|
         content.icon_name = 'errands-calendar-symbolic'
         content.can_shrink = true
-        content.label = 'Date'
+        content.label = Translations.gettext('Date')
       end
     end
 
@@ -122,7 +123,7 @@ module Errands
         button.valign = :center
         button.halign = :start
         button.hexpand = true
-        button.tooltip_text = 'Start / Due Date'
+        button.tooltip_text = Translations.gettext('Start / Due Date')
         button.add_css_class('flat')
         button.add_css_class('caption')
         button.child = date_time_content
@@ -130,11 +131,11 @@ module Errands
     end
 
     def notes_button
-      @notes_button ||= flat_icon_button('errands-notes-symbolic', 'Notes')
+      @notes_button ||= flat_icon_button('errands-notes-symbolic', Translations.gettext('Notes'))
     end
 
     def attachments_button
-      @attachments_button ||= flat_icon_button('errands-attachment-symbolic', 'Attachments')
+      @attachments_button ||= flat_icon_button('errands-attachment-symbolic', Translations.gettext('Attachments'))
     end
 
     def custom_priority_button
@@ -154,7 +155,7 @@ module Errands
       end
     end
 
-    def priority_separator = @priority_separator ||= TitledSeparator.new('Custom')
+    def priority_separator = @priority_separator ||= TitledSeparator.new(Translations.gettext('Custom'))
 
     def priority_list
       @priority_list ||= Gtk::ListBox.new.tap do |list|
@@ -181,7 +182,7 @@ module Errands
       @priority_button ||= Gtk::MenuButton.new.tap do |button|
         button.valign = :center
         button.icon_name = 'errands-priority-symbolic'
-        button.tooltip_text = 'Priority'
+        button.tooltip_text = Translations.gettext('Priority')
         button.add_css_class('flat')
         button.popover = priority_popover
       end
@@ -189,7 +190,7 @@ module Errands
 
     def tags_status_page
       @tags_status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'No Tags'
+        page.title = Translations.gettext('No Tags')
         page.icon_name = 'errands-info-symbolic'
         page.add_css_class('compact')
       end
@@ -232,7 +233,7 @@ module Errands
       @tags_button ||= Gtk::MenuButton.new.tap do |button|
         button.valign = :center
         button.icon_name = 'errands-tag-add-symbolic'
-        button.tooltip_text = 'Tags'
+        button.tooltip_text = Translations.gettext('Tags')
         button.add_css_class('flat')
         button.popover = tags_popover
       end
@@ -243,7 +244,7 @@ module Errands
     end
 
     def created_label
-      @created_label ||= Gtk::Label.new('Created:').tap do |label|
+      @created_label ||= Gtk::Label.new(Translations.gettext('Created:')).tap do |label|
         label.halign = :start
         label.margin_bottom = 6
         label.margin_start = 6
@@ -253,7 +254,7 @@ module Errands
     end
 
     def changed_label
-      @changed_label ||= Gtk::Label.new('Changed:').tap do |label|
+      @changed_label ||= Gtk::Label.new(Translations.gettext('Changed:')).tap do |label|
         label.halign = :start
         label.margin_start = 6
         label.margin_end = 6
@@ -279,7 +280,7 @@ module Errands
       @menu_button ||= Gtk::MenuButton.new.tap do |button|
         button.valign = :center
         button.icon_name = 'errands-more-symbolic'
-        button.tooltip_text = 'More'
+        button.tooltip_text = Translations.gettext('More')
         button.add_css_class('flat')
         button.popover = popover_menu
       end
@@ -375,8 +376,8 @@ module Errands
 
       def on_menu_toggled
         if menu_button.active?
-          created_label.label = "Created: #{timestamp(@task.task_data.created_at)}"
-          changed_label.label = "Changed: #{timestamp(@task.task_data.changed_at)}"
+          created_label.label = "#{Translations.gettext('Created:')} #{timestamp(@task.task_data.created_at)}"
+          changed_label.label = "#{Translations.gettext('Changed:')} #{timestamp(@task.task_data.changed_at)}"
           @task.block_signals = true
           color_selector.select_color(@task.task_data.color)
           @task.block_signals = false

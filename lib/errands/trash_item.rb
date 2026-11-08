@@ -6,6 +6,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
 require_relative 'task'
+require_relative 'translations'
 
 module Errands
   # TrashItem is one row in the Trash page: the trashed task's text, the
@@ -77,7 +78,7 @@ module Errands
 
       def restore_button
         @restore_button ||= Gtk::Button.new.tap do |button|
-          button.tooltip_text = 'Restore'
+          button.tooltip_text = Translations.gettext('Restore')
           button.icon_name = 'errands-check-toggle-symbolic'
           button.valign = :center
           button.add_css_class('circular')

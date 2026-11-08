@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # LoadingPage is the view stack page shown while the tasks are read.
@@ -37,7 +38,7 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'Loading Tasks...'
+        page.title = Translations.gettext('Loading Tasks...')
         page.icon_name = 'errands-progressbar-symbolic'
         page.vexpand = true
         page.add_css_class('compact')

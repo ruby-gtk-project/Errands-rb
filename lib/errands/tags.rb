@@ -6,6 +6,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
 require_relative 'tag_row'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -95,14 +96,14 @@ module Errands
 
     def header_bar = @header_bar ||= Adwaita::HeaderBar.new.tap { |bar| bar.title_widget = window_title }
 
-    def window_title = @window_title ||= Adwaita::WindowTitle.new('Tags', '')
+    def window_title = @window_title ||= Adwaita::WindowTitle.new(Translations.gettext('Tags'), '')
 
     def content_box = @content_box ||= Gtk::Box.new(:vertical, 0)
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'No Tags Found'
-        page.description = 'Add new Tags in the entry above'
+        page.title = Translations.gettext('No Tags Found')
+        page.description = Translations.gettext('Add new Tags in the entry above')
         page.icon_name = 'errands-info-symbolic'
         page.vexpand = true
         page.add_css_class('compact')
@@ -128,7 +129,7 @@ module Errands
 
     def entry_row
       @entry_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Add new Tag'
+        row.title = Translations.gettext('Add new Tag')
         row.activatable = false
         row.height_request = 60
       end

@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'logging'
+require_relative 'translations'
 
 module Errands
   # ColorSelector is the row of accent colour radio buttons in a task's menu.
@@ -74,7 +75,7 @@ module Errands
       def color_button(name, tooltip)
         Gtk::CheckButton.new.tap do |button|
           button.name = name
-          button.tooltip_text = tooltip
+          button.tooltip_text = Translations.gettext(tooltip)
           button.add_css_class('accent-color-btn')
           button.add_css_class("accent-color-btn-#{name}")
         end

@@ -7,6 +7,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
 require_relative 'today_task'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -112,13 +113,13 @@ module Errands
 
     def header_bar = @header_bar ||= Adwaita::HeaderBar.new.tap { |bar| bar.title_widget = window_title }
 
-    def window_title = @window_title ||= Adwaita::WindowTitle.new('Today', '')
+    def window_title = @window_title ||= Adwaita::WindowTitle.new(Translations.gettext('Today'), '')
 
     def content_box = @content_box ||= Gtk::Box.new(:vertical, 0)
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'No Tasks for Today'
+        page.title = Translations.gettext('No Tasks for Today')
         page.icon_name = 'errands-info-symbolic'
         page.vexpand = true
         page.add_css_class('compact')

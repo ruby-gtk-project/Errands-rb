@@ -6,6 +6,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # TagsSidebarRow is the "Tags" row in the sidebar, above the task lists.
@@ -61,7 +62,7 @@ module Errands
       def icon = @icon ||= Gtk::Image.new(icon_name: 'errands-tag-symbolic')
 
       def label
-        @label ||= Gtk::Label.new('Tags').tap do |text|
+        @label ||= Gtk::Label.new(Translations.gettext('Tags')).tap do |text|
           text.hexpand = true
           text.halign = :start
         end

@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'logging'
+require_relative 'translations'
 
 module Errands
   # Tag is one tag chip in a task's tags bar.
@@ -49,7 +50,7 @@ module Errands
     def delete_button
       @delete_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-close-symbolic'
-        button.tooltip_text = 'Delete Tag'
+        button.tooltip_text = Translations.gettext('Delete Tag')
         button.cursor = Gdk::Cursor.new('pointer')
       end
     end

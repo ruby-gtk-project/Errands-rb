@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'logging'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # AttachmentRow is one attached file in the attachments dialog.
@@ -22,7 +23,7 @@ module Errands
     def build
       tap do |row|
         row.activatable = true
-        row.tooltip_text = 'Open File'
+        row.tooltip_text = Translations.gettext('Open File')
         row.title = File.basename(@path)
         row.add_prefix(folder_button)
         row.add_suffix(delete_button)
@@ -38,7 +39,7 @@ module Errands
     def folder_button
       @folder_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-folder-symbolic'
-        button.tooltip_text = 'Open Containing Folder'
+        button.tooltip_text = Translations.gettext('Open Containing Folder')
         button.valign = :center
         button.add_css_class('flat')
       end
@@ -47,7 +48,7 @@ module Errands
     def delete_button
       @delete_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-trash-symbolic'
-        button.tooltip_text = 'Delete'
+        button.tooltip_text = Translations.gettext('Delete')
         button.valign = :center
         button.add_css_class('error')
         button.add_css_class('flat')

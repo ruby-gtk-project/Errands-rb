@@ -2,6 +2,8 @@
 
 require 'adwaita'
 
+require_relative 'translations'
+
 module Errands
   # ShortcutsDialog lists the keyboard shortcuts.
   #
@@ -33,7 +35,7 @@ module Errands
 
     def initialize
       super()
-      self.title = 'Keyboard Shortcuts'
+      self.title = Translations.gettext('Keyboard Shortcuts')
     end
 
     def build
@@ -46,8 +48,8 @@ module Errands
 
       def section(title, items)
         Adwaita::ShortcutsSection.new.tap do |group|
-          group.title = title
-          items.each { |label, accelerator| group.add(Adwaita::ShortcutsItem.new(label, accelerator)) }
+          group.title = Translations.gettext(title)
+          items.each { |label, accelerator| group.add(Adwaita::ShortcutsItem.new(Translations.gettext(label), accelerator)) }
         end
       end
   end

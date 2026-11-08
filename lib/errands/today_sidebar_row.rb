@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # TodaySidebarRow is the "Today" row in the sidebar, above the task lists.
@@ -54,7 +55,7 @@ module Errands
       def icon = @icon ||= Gtk::Image.new(icon_name: 'errands-calendar-symbolic')
 
       def label
-        @label ||= Gtk::Label.new('Today').tap do |text|
+        @label ||= Gtk::Label.new(Translations.gettext('Today')).tap do |text|
           text.hexpand = true
           text.halign = :start
         end

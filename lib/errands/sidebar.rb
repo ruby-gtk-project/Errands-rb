@@ -11,6 +11,7 @@ require_relative 'tags_sidebar_row'
 require_relative 'task_list_sidebar_row'
 require_relative 'titled_separator'
 require_relative 'today_sidebar_row'
+require_relative 'translations'
 require_relative 'trash_sidebar_row'
 require_relative 'utils'
 
@@ -167,7 +168,7 @@ module Errands
     def header_bar = @header_bar ||= Adwaita::HeaderBar.new
 
     def title_label
-      @title_label ||= Gtk::Label.new('Errands').tap do |label|
+      @title_label ||= Gtk::Label.new(Translations.gettext('Errands')).tap do |label|
         label.add_css_class('heading')
       end
     end
@@ -175,7 +176,7 @@ module Errands
     def add_list_button
       @add_list_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-add-symbolic'
-        button.tooltip_text = 'Add List (Ctrl+Shift+A)'
+        button.tooltip_text = Translations.gettext('Add List (Ctrl+Shift+A)')
       end
     end
 
@@ -190,7 +191,7 @@ module Errands
     def menu_button
       @menu_button ||= Gtk::MenuButton.new.tap do |button|
         button.primary = true
-        button.tooltip_text = 'Main Menu'
+        button.tooltip_text = Translations.gettext('Main Menu')
         button.icon_name = 'open-menu-symbolic'
         button.menu_model = menu_model
       end
@@ -208,7 +209,7 @@ module Errands
     def sync_spinner
       @sync_spinner ||= Gtk::Spinner.new.tap do |spinner|
         spinner.spinning = true
-        spinner.tooltip_text = 'Syncing...'
+        spinner.tooltip_text = Translations.gettext('Syncing...')
       end
     end
 
@@ -230,8 +231,8 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'Add new List'
-        page.description = 'Click "+" button'
+        page.title = Translations.gettext('Add new List')
+        page.description = Translations.gettext('Click "+" button')
         page.icon_name = 'errands-lists-symbolic'
         page.vexpand = true
         page.add_css_class('compact')
@@ -248,22 +249,22 @@ module Errands
 
       def sync_section
         Gio::Menu.new.tap do |section|
-          section.append('Sync / Fetch Tasks', 'app.sync')
+          section.append(Translations.gettext('Sync / Fetch Tasks'), 'app.sync')
         end
       end
 
       def import_section
         Gio::Menu.new.tap do |section|
-          section.append('Import Task List', 'app.import')
+          section.append(Translations.gettext('Import Task List'), 'app.import')
         end
       end
 
       def application_section
         Gio::Menu.new.tap do |section|
-          section.append('Preferences', 'app.preferences')
-          section.append('Keyboard Shortcuts', 'app.shortcuts')
-          section.append('About Errands', 'app.about')
-          section.append('Quit', 'app.quit')
+          section.append(Translations.gettext('Preferences'), 'app.preferences')
+          section.append(Translations.gettext('Keyboard Shortcuts'), 'app.shortcuts')
+          section.append(Translations.gettext('About Errands'), 'app.about')
+          section.append(Translations.gettext('Quit'), 'app.quit')
         end
       end
 
@@ -272,7 +273,7 @@ module Errands
       # rows) or is not itself a task list row.
       def add_header(row, before)
         if task_list_row?(row) && !task_list_row?(before)
-          TitledSeparator.new('Task Lists', [12, 12, 0, 2]).then { |header| row.header = header.build }
+          TitledSeparator.new(Translations.gettext('Task Lists'), [12, 12, 0, 2]).then { |header| row.header = header.build }
         end
       end
 

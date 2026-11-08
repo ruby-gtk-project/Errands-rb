@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'logging'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # NotesDialog edits one task's notes.
@@ -20,7 +21,7 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.title = 'Notes'
+        dialog.title = Translations.gettext('Notes')
         dialog.content_width = CONTENT_SIZE
         dialog.content_height = CONTENT_SIZE
         dialog.child = toolbar_view

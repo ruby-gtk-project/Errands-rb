@@ -9,6 +9,7 @@ require_relative 'rename_list_dialog'
 require_relative 'settings'
 require_relative 'state'
 require_relative 'task_list'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -95,7 +96,7 @@ module Errands
 
     def color_button
       @color_button ||= Gtk::ColorDialogButton.new(color_dialog).tap do |button|
-        button.tooltip_text = 'Color'
+        button.tooltip_text = Translations.gettext('Color')
         button.valign = :center
       end
     end
@@ -128,9 +129,9 @@ module Errands
 
     def menu_model
       @menu_model ||= Gio::Menu.new.tap do |menu|
-        menu.append('Rename', 'list_row.rename')
-        menu.append('Delete', 'list_row.delete')
-        menu.append('Export', 'list_row.export')
+        menu.append(Translations.gettext('Rename'), 'list_row.rename')
+        menu.append(Translations.gettext('Delete'), 'list_row.delete')
+        menu.append(Translations.gettext('Export'), 'list_row.export')
       end
     end
 
@@ -190,7 +191,7 @@ module Errands
       end
 
       def confirm_delete
-        ConfirmDialog.show('List will be permanently deleted', 'Delete', :destructive) do |response|
+        ConfirmDialog.show(Translations.gettext('List will be permanently deleted'), Translations.gettext('Delete'), :destructive) do |response|
           if response == 'cancel'
             Log.debug('ListItem: Deleting list is cancelled')
           else
@@ -231,10 +232,10 @@ module Errands
       def write_export(file)
         Log.info("List: Export '#{@uid}'")
         File.write(file.path, @list_data.to_ical)
-        State.main_window.add_toast('Exported')
+        State.main_window.add_toast(Translations.gettext('Exported'))
       rescue StandardError => e
         Log.error("List: Export failed. #{e.message}")
-        State.main_window.add_toast('Export failed')
+        State.main_window.add_toast(Translations.gettext('Export failed'))
       end
 
       # ------ SIGNAL HANDLERS ------ #

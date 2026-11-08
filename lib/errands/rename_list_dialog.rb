@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'data'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # RenameListDialog asks for a task list's new name.
@@ -22,10 +23,10 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.heading = 'Rename List'
+        dialog.heading = Translations.gettext('Rename List')
         dialog.extra_child = entry
-        dialog.add_response('cancel', 'Cancel')
-        dialog.add_response('save', 'Save')
+        dialog.add_response('cancel', Translations.gettext('Cancel'))
+        dialog.add_response('save', Translations.gettext('Save'))
         dialog.set_response_enabled('save', false)
         dialog.set_response_appearance('save', :suggested)
         dialog.default_response = 'save'
@@ -53,7 +54,7 @@ module Errands
 
     def entry
       @entry ||= Gtk::Entry.new.tap do |field|
-        field.placeholder_text = 'New Name'
+        field.placeholder_text = Translations.gettext('New Name')
       end
     end
 

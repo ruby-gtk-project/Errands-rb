@@ -9,6 +9,7 @@ require_relative 'settings'
 require_relative 'state'
 require_relative 'task'
 require_relative 'titled_separator'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -136,7 +137,7 @@ module Errands
 
       total, completed = UserData.get_status(@list_uid)
       if total.positive?
-        title.subtitle = "Completed: #{completed} / #{total}"
+        title.subtitle = "#{Translations.gettext('Completed:')} #{completed} / #{total}"
       else
         title.subtitle = ''
       end
@@ -186,7 +187,7 @@ module Errands
       @toggle_completed_button ||= Gtk::ToggleButton.new.tap do |button|
         button.icon_name = 'errands-check-toggle-symbolic'
         button.valign = :center
-        button.tooltip_text = 'Toggle Completed Tasks'
+        button.tooltip_text = Translations.gettext('Toggle Completed Tasks')
       end
     end
 
@@ -194,7 +195,7 @@ module Errands
       @delete_completed_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-delete-all-symbolic'
         button.valign = :center
-        button.tooltip_text = 'Delete Completed Tasks'
+        button.tooltip_text = Translations.gettext('Delete Completed Tasks')
       end
     end
 
@@ -203,7 +204,7 @@ module Errands
         button.icon_name = 'errands-up-symbolic'
         button.visible = false
         button.valign = :center
-        button.tooltip_text = 'Scroll Up'
+        button.tooltip_text = Translations.gettext('Scroll Up')
       end
     end
 
@@ -216,7 +217,7 @@ module Errands
 
     def entry_row
       @entry_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Add new Task'
+        row.title = Translations.gettext('Add new Task')
         row.activatable = false
         row.height_request = 60
         row.margin_top = 3
@@ -259,7 +260,7 @@ module Errands
       end
     end
 
-    def separator = @separator ||= TitledSeparator.new('Completed', [24, 24, 0, 0])
+    def separator = @separator ||= TitledSeparator.new(Translations.gettext('Completed'), [24, 24, 0, 0])
 
     def separator_bin = @separator_bin ||= Adwaita::Bin.new
 

@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'goa'
 require_relative 'settings'
 require_relative 'sync'
+require_relative 'translations'
 
 module Errands
   # PreferencesDialog is the app's preferences: theme, task list behaviour,
@@ -22,7 +23,7 @@ module Errands
   # release.
   #
   class PreferencesDialog < Adwaita::PreferencesDialog
-    PROVIDER_NAMES = ['Disabled', 'Nextcloud', 'CalDAV'].freeze
+    PROVIDER_NAMES = [Translations.gettext('Disabled'), 'Nextcloud', 'CalDAV'].freeze
 
     def build
       tap do |dialog|
@@ -79,12 +80,12 @@ module Errands
 
     def general_page
       @general_page ||= Adwaita::PreferencesPage.new.tap do |page|
-        page.title = 'General'
+        page.title = Translations.gettext('General')
         page.icon_name = 'errands-settings-symbolic'
       end
     end
 
-    def theme_group = @theme_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = 'Application Theme' }
+    def theme_group = @theme_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = Translations.gettext('Application Theme') }
 
     def theme_system_check
       @theme_system_check ||= Gtk::CheckButton.new.tap do |check|
@@ -111,32 +112,32 @@ module Errands
 
     def theme_system_row
       @theme_system_row ||= Adwaita::ActionRow.new.tap do |row|
-        row.title = 'System'
+        row.title = Translations.gettext('System')
         row.icon_name = 'errands-theme-system-symbolic'
       end
     end
 
     def theme_light_row
       @theme_light_row ||= Adwaita::ActionRow.new.tap do |row|
-        row.title = 'Light'
+        row.title = Translations.gettext('Light')
         row.icon_name = 'errands-theme-light-symbolic'
       end
     end
 
     def theme_dark_row
       @theme_dark_row ||= Adwaita::ActionRow.new.tap do |row|
-        row.title = 'Dark'
+        row.title = Translations.gettext('Dark')
         row.icon_name = 'errands-theme-dark-symbolic'
       end
     end
 
-    def task_list_group = @task_list_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = 'Task Lists' }
+    def task_list_group = @task_list_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = Translations.gettext('Task Lists') }
 
     def new_task_position_row
       @new_task_position_row ||= Adwaita::ComboRow.new.tap do |row|
-        row.title = 'Add new Tasks'
+        row.title = Translations.gettext('Add new Tasks')
         row.icon_name = 'errands-add-symbolic'
-        row.model = Gtk::StringList.new(['At the Bottom', 'At the Top'])
+        row.model = Gtk::StringList.new([Translations.gettext('At the Bottom'), Translations.gettext('At the Top')])
         if Settings.get('task-list-new-task-position-top')
           row.selected = 1
         else
@@ -150,13 +151,13 @@ module Errands
 
     def notifications_and_background_group
       @notifications_and_background_group ||= Adwaita::PreferencesGroup.new.tap do |group|
-        group.title = 'Notifications and Background'
+        group.title = Translations.gettext('Notifications and Background')
       end
     end
 
     def notifications_row
       @notifications_row ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = 'Show Notifications'
+        row.title = Translations.gettext('Show Notifications')
         row.icon_name = 'errands-notification-symbolic'
         Settings.bind('notifications-enabled', row, 'active')
       end
@@ -164,8 +165,8 @@ module Errands
 
     def background_row
       @background_row ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = 'Run in Background'
-        row.subtitle = 'Hide the application window instead of closing it'
+        row.title = Translations.gettext('Run in Background')
+        row.subtitle = Translations.gettext('Hide the application window instead of closing it')
         row.icon_name = 'errands-progressbar-symbolic'
         Settings.bind('run-in-background', row, 'active')
       end
@@ -173,8 +174,8 @@ module Errands
 
     def launch_on_startup_row
       @launch_on_startup_row ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = 'Launch on Startup'
-        row.subtitle = 'Launch application when user logs in'
+        row.title = Translations.gettext('Launch on Startup')
+        row.subtitle = Translations.gettext('Launch application when user logs in')
         row.icon_name = 'errands-progressbar-symbolic'
         Settings.bind('launch-on-startup', row, 'active')
         row.signal_connect('notify::active') { Application.run_in_background }
@@ -185,16 +186,16 @@ module Errands
 
     def sync_page
       @sync_page ||= Adwaita::PreferencesPage.new.tap do |page|
-        page.title = 'Sync'
+        page.title = Translations.gettext('Sync')
         page.icon_name = 'errands-sync-symbolic'
       end
     end
 
-    def sync_group = @sync_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = 'Sync' }
+    def sync_group = @sync_group ||= Adwaita::PreferencesGroup.new.tap { |group| group.title = Translations.gettext('Sync') }
 
     def sync_provider_row
       @sync_provider_row ||= Adwaita::ComboRow.new.tap do |row|
-        row.title = 'Sync Provider'
+        row.title = Translations.gettext('Sync Provider')
         row.icon_name = 'errands-sync-symbolic'
         row.model = Gtk::StringList.new(PROVIDER_NAMES)
         row.selected = Settings.get('sync-provider')
@@ -207,29 +208,29 @@ module Errands
 
     def sync_url_row
       @sync_url_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Server URL'
+        row.title = Translations.gettext('Server URL')
         Settings.bind('sync-url', row, 'text')
       end
     end
 
     def sync_username_row
       @sync_username_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Username'
+        row.title = Translations.gettext('Username')
         Settings.bind('sync-username', row, 'text')
       end
     end
 
     def sync_password_row
       @sync_password_row ||= Adwaita::PasswordEntryRow.new.tap do |row|
-        row.title = 'Password'
+        row.title = Translations.gettext('Password')
         row.signal_connect('changed') { on_password_changed(row) }
       end
     end
 
-    def test_connection_row = @test_connection_row ||= Adwaita::ActionRow.new.tap { |row| row.title = 'Test Connection' }
+    def test_connection_row = @test_connection_row ||= Adwaita::ActionRow.new.tap { |row| row.title = Translations.gettext('Test Connection') }
 
     def test_connection_button
-      @test_connection_button ||= Gtk::Button.new(label: 'Test').tap do |button|
+      @test_connection_button ||= Gtk::Button.new(label: Translations.gettext('Test')).tap do |button|
         button.valign = :center
         button.signal_connect('clicked') { on_test_connection_clicked }
       end
@@ -289,7 +290,7 @@ module Errands
 
       def test_connection_message(can_sync, error)
         if can_sync
-          'Connected'
+          Translations.gettext('Connected')
         else
           error_message(error)
         end
@@ -297,10 +298,10 @@ module Errands
 
       def error_message(error)
         case error
-        when Caldav::AuthorizationError then 'Authorization failed'
-        when Caldav::ConnectionError then 'Could not locate server. Check network and url.'
-        when Caldav::PropfindError then "Can't connect"
-        else "Can't connect. Check credentials"
+        when Caldav::AuthorizationError then Translations.gettext('Authorization failed')
+        when Caldav::ConnectionError then Translations.gettext('Could not locate server. Check network and url.')
+        when Caldav::PropfindError then Translations.gettext("Can't connect")
+        else Translations.gettext("Can't connect. Check credentials")
         end
       end
   end

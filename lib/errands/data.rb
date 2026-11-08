@@ -7,6 +7,7 @@ require 'securerandom'
 
 require_relative 'logging'
 require_relative 'settings'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -72,7 +73,7 @@ module Errands
         end
       end
       if task_list.name.to_s.empty?
-        task_list.name = 'New Task List'
+        task_list.name = Translations.gettext('New Task List')
       end
 
       tasks = ical.to_s.split('BEGIN:VTODO')[1..].to_a.map do |todo|

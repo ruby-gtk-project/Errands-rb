@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # TrashSidebarRow is the "Trash" row in the sidebar, below the task lists:
@@ -75,7 +76,7 @@ module Errands
       def icon = @icon ||= Gtk::Image.new(icon_name: 'errands-trash-symbolic')
 
       def label
-        @label ||= Gtk::Label.new('Trash').tap do |text|
+        @label ||= Gtk::Label.new(Translations.gettext('Trash')).tap do |text|
           text.hexpand = true
           text.halign = :start
         end
@@ -102,8 +103,8 @@ module Errands
 
       def menu_model
         @menu_model ||= Gio::Menu.new.tap do |menu|
-          menu.append('Clear', 'trash_row.clear')
-          menu.append('Restore', 'trash_row.restore')
+          menu.append(Translations.gettext('Clear'), 'trash_row.clear')
+          menu.append(Translations.gettext('Restore'), 'trash_row.restore')
         end
       end
 

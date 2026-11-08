@@ -11,6 +11,7 @@ require_relative 'state'
 require_relative 'tag'
 require_relative 'task_toolbar'
 require_relative 'titled_separator'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -294,7 +295,7 @@ module Errands
       title_row.title = Markup.find_url(Markup.escape(@task_data.text))
       total, completed = get_status
       if total.positive?
-        title_row.subtitle = "Completed: #{completed} / #{total}"
+        title_row.subtitle = "#{Translations.gettext('Completed:')} #{completed} / #{total}"
       else
         title_row.subtitle = ''
       end
@@ -409,7 +410,7 @@ module Errands
       @title_row ||= Adwaita::ActionRow.new.tap do |row|
         row.height_request = 60
         row.use_markup = true
-        row.tooltip_text = 'Toggle Sub-Tasks'
+        row.tooltip_text = Translations.gettext('Toggle Sub-Tasks')
         row.cursor = Gdk::Cursor.new('pointer')
         row.add_css_class('transparent')
         row.add_css_class('rounded-corners')
@@ -418,7 +419,7 @@ module Errands
 
     def complete_button
       @complete_button ||= Gtk::CheckButton.new.tap do |button|
-        button.tooltip_text = 'Toggle Completion'
+        button.tooltip_text = Translations.gettext('Toggle Completion')
         button.valign = :center
         button.add_css_class('selection-mode')
       end
@@ -446,7 +447,7 @@ module Errands
       @toolbar_toggle_button ||= Gtk::ToggleButton.new.tap do |button|
         button.icon_name = 'errands-toolbar-symbolic'
         button.valign = :center
-        button.tooltip_text = 'Toggle Toolbar'
+        button.tooltip_text = Translations.gettext('Toggle Toolbar')
         button.add_css_class('circular')
         button.add_css_class('flat')
       end
@@ -454,7 +455,7 @@ module Errands
 
     def edit_row
       @edit_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Edit'
+        row.title = Translations.gettext('Edit')
         row.visible = false
         row.height_request = 60
         row.show_apply_button = true
@@ -465,7 +466,7 @@ module Errands
 
     def cancel_edit_button
       @cancel_edit_button ||= Gtk::Button.new.tap do |button|
-        button.tooltip_text = 'Cancel'
+        button.tooltip_text = Translations.gettext('Cancel')
         button.valign = :center
         button.icon_name = 'window-close-symbolic'
         button.add_css_class('circular')
@@ -517,7 +518,7 @@ module Errands
         entry.margin_end = MARGIN
         entry.margin_top = 3
         entry.margin_bottom = 4
-        entry.placeholder_text = 'Add new Sub-Task'
+        entry.placeholder_text = Translations.gettext('Add new Sub-Task')
       end
     end
 
@@ -525,7 +526,7 @@ module Errands
 
     def completed_task_list = @completed_task_list ||= Gtk::Box.new(:vertical, 0)
 
-    def separator = @separator ||= TitledSeparator.new('Completed', [24, 24, 0, 0])
+    def separator = @separator ||= TitledSeparator.new(Translations.gettext('Completed'), [24, 24, 0, 0])
 
     def separator_bin = @separator_bin ||= Adwaita::Bin.new
 
@@ -538,10 +539,10 @@ module Errands
 
     def menu_model
       @menu_model ||= Gio::Menu.new.tap do |menu|
-        menu.append('Edit', 'task.edit')
-        menu.append('Move to Trash', 'task.move_to_trash')
-        menu.append('Copy to Clipboard', 'task.copy_to_clipboard')
-        menu.append('Export', 'task.export')
+        menu.append(Translations.gettext('Edit'), 'task.edit')
+        menu.append(Translations.gettext('Move to Trash'), 'task.move_to_trash')
+        menu.append(Translations.gettext('Copy to Clipboard'), 'task.copy_to_clipboard')
+        menu.append(Translations.gettext('Export'), 'task.export')
       end
     end
 
@@ -720,7 +721,7 @@ module Errands
       def copy_to_clipboard
         Log.info('Task: Copy text to clipboard')
         revealer.clipboard.set(@task_data.text)
-        State.main_window.add_toast('Copied to Clipboard')
+        State.main_window.add_toast(Translations.gettext('Copied to Clipboard'))
       end
 
       def export
@@ -737,7 +738,7 @@ module Errands
       def write_export(file)
         Log.info("Task: Export '#{@uid}'")
         File.write(file.path, @task_data.to_ical(as_calendar: true))
-        State.main_window.add_toast('Exported')
+        State.main_window.add_toast(Translations.gettext('Exported'))
       end
 
       def on_complete_button_toggled

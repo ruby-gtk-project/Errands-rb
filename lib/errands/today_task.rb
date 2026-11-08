@@ -8,6 +8,7 @@ require_relative 'markup'
 require_relative 'state'
 require_relative 'tag'
 require_relative 'task_toolbar'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -228,7 +229,7 @@ module Errands
 
     def complete_button
       @complete_button ||= Gtk::CheckButton.new.tap do |button|
-        button.tooltip_text = 'Toggle Completion'
+        button.tooltip_text = Translations.gettext('Toggle Completion')
         button.valign = :center
         button.add_css_class('selection-mode')
       end
@@ -236,7 +237,7 @@ module Errands
 
     def edit_row
       @edit_row ||= Adwaita::EntryRow.new.tap do |row|
-        row.title = 'Edit'
+        row.title = Translations.gettext('Edit')
         row.visible = false
         row.height_request = 60
         row.show_apply_button = true
@@ -247,7 +248,7 @@ module Errands
 
     def cancel_edit_button
       @cancel_edit_button ||= Gtk::Button.new.tap do |button|
-        button.tooltip_text = 'Cancel'
+        button.tooltip_text = Translations.gettext('Cancel')
         button.valign = :center
         button.icon_name = 'window-close-symbolic'
         button.add_css_class('circular')
@@ -278,10 +279,10 @@ module Errands
 
     def menu_model
       @menu_model ||= Gio::Menu.new.tap do |menu|
-        menu.append('Edit', 'task.edit')
-        menu.append('Move to Trash', 'task.move_to_trash')
-        menu.append('Copy to Clipboard', 'task.copy_to_clipboard')
-        menu.append('Export', 'task.export')
+        menu.append(Translations.gettext('Edit'), 'task.edit')
+        menu.append(Translations.gettext('Move to Trash'), 'task.move_to_trash')
+        menu.append(Translations.gettext('Copy to Clipboard'), 'task.copy_to_clipboard')
+        menu.append(Translations.gettext('Export'), 'task.export')
       end
     end
 
@@ -359,7 +360,7 @@ module Errands
       def copy_to_clipboard
         Log.info('TodayTask: Copy text to clipboard')
         revealer.clipboard.set(@task_data.text)
-        State.main_window.add_toast('Copied to Clipboard')
+        State.main_window.add_toast(Translations.gettext('Copied to Clipboard'))
       end
 
       def export
@@ -376,7 +377,7 @@ module Errands
       def write_export(file)
         Log.info("TodayTask: Export '#{@uid}'")
         File.write(file.path, @task_data.to_ical(as_calendar: true))
-        State.main_window.add_toast('Exported')
+        State.main_window.add_toast(Translations.gettext('Exported'))
       end
 
       def on_complete_button_toggled

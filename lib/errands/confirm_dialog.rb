@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # ConfirmDialog asks before something destructive happens.
@@ -23,9 +24,9 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.heading = 'Are you sure?'
+        dialog.heading = Translations.gettext('Are you sure?')
         dialog.body = @text
-        dialog.add_response('cancel', 'Cancel')
+        dialog.add_response('cancel', Translations.gettext('Cancel'))
         dialog.add_response('confirm', @confirm_text)
         dialog.set_response_appearance('confirm', @style)
         dialog.default_response = 'confirm'

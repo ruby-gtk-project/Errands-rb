@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'attachment_row'
 require_relative 'logging'
 require_relative 'state'
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -19,7 +20,7 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.title = 'Attachments'
+        dialog.title = Translations.gettext('Attachments')
         dialog.follows_content_size = true
         dialog.child = toolbar_view
 
@@ -76,7 +77,7 @@ module Errands
     def add_button
       @add_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = 'errands-add-symbolic'
-        button.tooltip_text = 'Add Attachment'
+        button.tooltip_text = Translations.gettext('Add Attachment')
       end
     end
 
@@ -86,7 +87,7 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'No Files Attached'
+        page.title = Translations.gettext('No Files Attached')
         page.icon_name = 'errands-attachment-symbolic'
         page.vexpand = true
         page.add_css_class('compact')

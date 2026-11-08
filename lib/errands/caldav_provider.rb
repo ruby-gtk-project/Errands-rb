@@ -9,6 +9,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # Caldav holds the WebDAV/CalDAV HTTP primitives the sync providers run
@@ -266,7 +267,7 @@ module Errands
         if @url.to_s.empty? || @username.to_s.empty? || @password.to_s.empty?
           Log.error("Sync: Not all #{@name} credentials provided")
           unless @testing
-            State.add_toast('Not all sync credentials provided. Please check settings.')
+            State.add_toast(Translations.gettext('Not all sync credentials provided. Please check settings.'))
           end
           false
         else
@@ -293,7 +294,7 @@ module Errands
         @can_sync = false
         Log.error("Sync: Can't connect to #{@name} server at '#{@url}'. #{error.message}")
         unless @testing
-          State.add_toast("Can't connect to CalDAV server at: #{@url}")
+          State.add_toast("#{Translations.gettext('Can\'t connect to CalDAV server at:')} #{@url}")
         end
       end
 

@@ -2,6 +2,8 @@
 
 require 'adwaita'
 
+require_relative 'translations'
+
 module Errands
   # Utils holds the small helpers upstream keeps as module-level functions.
   #
@@ -17,7 +19,7 @@ module Errands
       # the toolbar's date button shows it. An empty value reads as "Date".
       def human_datetime(date_time)
         if date_time.to_s.empty?
-          'Date'
+          Translations.gettext('Date')
         else
           format_datetime(date_time)
         end

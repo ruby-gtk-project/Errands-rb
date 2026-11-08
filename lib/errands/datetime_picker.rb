@@ -2,6 +2,7 @@
 
 require 'adwaita'
 
+require_relative 'translations'
 require_relative 'utils'
 
 module Errands
@@ -124,7 +125,7 @@ module Errands
       end
       @lock_signals = false
       if @datetime.empty?
-        label.label = 'Set Date'
+        label.label = Translations.gettext('Set Date')
       else
         label.label = human_datetime
       end
@@ -193,14 +194,14 @@ module Errands
       end
     end
 
-    def today_button = @today_button ||= flat_button('Today')
+    def today_button = @today_button ||= flat_button(Translations.gettext('Today'))
 
-    def tomorrow_button = @tomorrow_button ||= flat_button('Tomorrow')
+    def tomorrow_button = @tomorrow_button ||= flat_button(Translations.gettext('Tomorrow'))
 
-    def now_button = @now_button ||= flat_button('Now')
+    def now_button = @now_button ||= flat_button(Translations.gettext('Now'))
 
     def clear_button
-      @clear_button ||= content_button('Clear', 'errands-delete-all-symbolic')
+      @clear_button ||= content_button(Translations.gettext('Clear'), 'errands-delete-all-symbolic')
     end
 
     def calendar = @calendar ||= Gtk::Calendar.new

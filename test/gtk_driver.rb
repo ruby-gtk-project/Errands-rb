@@ -204,11 +204,21 @@ module GtkDriver
         end
         @failed_checks.each { |check| puts "  failed check: #{check}" }
         @errored_steps.each { |step| puts "  errored step: #{step}" }
+        puts "#{components_covered} components covered (distinct lib/errands files loaded this run)"
 
         (@failed_checks + @errored_steps).length.then do |total|
           puts(total.zero? ? 'DRIVE OK' : "DRIVE FAILED (#{total})")
           exit(total.zero? ? 0 : 1)
         end
+      end
+
+      # A "component" is one lib/errands/*.rb file — the same one-upstream-file-
+      # to-one-lib-file mapping the port uses throughout. Counting
+      # $LOADED_FEATURES rather than anything the steps assert on means this
+      # number is grounded in what the running process actually required, not
+      # a figure typed into a report by hand.
+      def components_covered
+        $LOADED_FEATURES.count { |path| path.include?('/lib/errands/') && path.end_with?('.rb') }
       end
   end
 end

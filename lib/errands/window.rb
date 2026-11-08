@@ -15,6 +15,7 @@ require_relative 'state'
 require_relative 'sync'
 require_relative 'tags'
 require_relative 'today'
+require_relative 'translations'
 require_relative 'trash'
 
 module Errands
@@ -60,12 +61,12 @@ module Errands
         end
 
         view_stack.tap do |stack|
-          stack.add_titled(loading_page.build, 'errands_loading_page', 'Loading Tasks')
-          stack.add_titled(status_page_view.build, 'errands_status_page', 'Create new List')
-          stack.add_titled(today.build, 'errands_today_page', 'Today')
-          stack.add_titled(tags.build, 'errands_tags_page', 'Tags')
-          stack.add_titled(trash.build, 'errands_trash_page', 'Trash')
-          stack.add_titled(syncing_page_view.build, 'errands_syncing_page', 'Syncing')
+          stack.add_titled(loading_page.build, 'errands_loading_page', Translations.gettext('Loading Tasks'))
+          stack.add_titled(status_page_view.build, 'errands_status_page', Translations.gettext('Create new List'))
+          stack.add_titled(today.build, 'errands_today_page', Translations.gettext('Today'))
+          stack.add_titled(tags.build, 'errands_tags_page', Translations.gettext('Tags'))
+          stack.add_titled(trash.build, 'errands_trash_page', Translations.gettext('Trash'))
+          stack.add_titled(syncing_page_view.build, 'errands_syncing_page', Translations.gettext('Syncing'))
         end
 
         status_page_button.signal_connect('clicked') { sidebar.add_list }
@@ -85,7 +86,7 @@ module Errands
 
     def window
       @window ||= Adwaita::ApplicationWindow.new(@application).tap do |win|
-        win.title = 'Errands'
+        win.title = Translations.gettext('Errands')
         win.width_request = MIN_WIDTH
         win.height_request = MIN_HEIGHT
       end
@@ -115,10 +116,10 @@ module Errands
 
     def sidebar = @sidebar ||= Sidebar.new
 
-    def sidebar_page = @sidebar_page ||= Adwaita::NavigationPage.new(sidebar.build, 'Sidebar')
+    def sidebar_page = @sidebar_page ||= Adwaita::NavigationPage.new(sidebar.build, Translations.gettext('Sidebar'))
 
     def content_page
-      @content_page ||= Adwaita::NavigationPage.new(view_stack, 'Content').tap do |page|
+      @content_page ||= Adwaita::NavigationPage.new(view_stack, Translations.gettext('Content')).tap do |page|
         page.width_request = MIN_WIDTH
       end
     end
@@ -132,7 +133,7 @@ module Errands
     def syncing_page_view = @syncing_page_view ||= SyncingPageView.new
 
     def status_page_button
-      @status_page_button ||= Gtk::Button.new(label: 'Create List').tap do |button|
+      @status_page_button ||= Gtk::Button.new(label: Translations.gettext('Create List')).tap do |button|
         button.halign = :center
         button.add_css_class('pill')
         button.add_css_class('suggested-action')
@@ -202,7 +203,7 @@ module Errands
 
       def run_sync_action
         if Settings.get('sync-provider').zero?
-          add_toast('Sync is disabled')
+          add_toast(Translations.gettext('Sync is disabled'))
         else
           Sync.sync
         end
@@ -251,8 +252,8 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'No Task Lists'
-        page.description = 'Create new or import existing one'
+        page.title = Translations.gettext('No Task Lists')
+        page.description = Translations.gettext('Create new or import existing one')
         page.icon_name = 'io.github.mrvladus.List-symbolic'
       end
     end
@@ -284,8 +285,8 @@ module Errands
 
     def status_page
       @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = 'Syncing'
-        page.description = 'First synchronization is running'
+        page.title = Translations.gettext('Syncing')
+        page.description = Translations.gettext('First synchronization is running')
         page.icon_name = 'errands-sync-symbolic'
       end
     end

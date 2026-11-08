@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'data'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # AddListDialog asks for the name of a new task list.
@@ -22,10 +23,10 @@ module Errands
 
     def build
       tap do |dialog|
-        dialog.heading = 'Add List'
+        dialog.heading = Translations.gettext('Add List')
         dialog.extra_child = entry
-        dialog.add_response('cancel', 'Cancel')
-        dialog.add_response('add', 'Add')
+        dialog.add_response('cancel', Translations.gettext('Cancel'))
+        dialog.add_response('add', Translations.gettext('Add'))
         dialog.set_response_enabled('add', false)
         dialog.set_response_appearance('add', :suggested)
         dialog.default_response = 'add'
@@ -52,7 +53,7 @@ module Errands
 
     def entry
       @entry ||= Gtk::Entry.new.tap do |field|
-        field.placeholder_text = 'New List Name'
+        field.placeholder_text = Translations.gettext('New List Name')
       end
     end
 

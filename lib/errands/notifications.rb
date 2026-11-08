@@ -7,6 +7,7 @@ require_relative 'data'
 require_relative 'logging'
 require_relative 'settings'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # Notifications is the notifications daemon: every 20 seconds it checks
@@ -62,7 +63,7 @@ module Errands
 
       def send_due_notification(task)
         Log.debug("Notifications: Send: #{task.uid}")
-        Gio::Notification.new('Task is Due').tap do |notification|
+        Gio::Notification.new(Translations.gettext('Task is Due')).tap do |notification|
           notification.body = task.text
           send(task.uid, notification)
         end

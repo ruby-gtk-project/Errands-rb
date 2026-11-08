@@ -6,6 +6,7 @@ require 'securerandom'
 require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # ImportDialog imports a task list from an iCal file.
@@ -52,7 +53,7 @@ module Errands
         new_list = UserData.add_list(task_list.name, uuid: task_list.uid, color: task_list.color)
         tasks.each { |task| UserData.add_task(**task.to_h.transform_keys(&:to_sym)) }
         State.sidebar.add_task_list(new_list)
-        State.main_window.add_toast('Imported')
+        State.main_window.add_toast(Translations.gettext('Imported'))
       end
 
       # Upstream gives an imported list a fresh uid when one of its own lists

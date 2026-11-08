@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'data'
 require_relative 'logging'
 require_relative 'state'
+require_relative 'translations'
 
 module Errands
   # TagRow is one row in the Tags page: a tag's name, how many tasks carry
@@ -54,7 +55,7 @@ module Errands
           button.icon_name = 'errands-trash-symbolic'
           button.add_css_class('flat')
           button.add_css_class('error')
-          button.tooltip_text = 'Delete'
+          button.tooltip_text = Translations.gettext('Delete')
           button.valign = :center
         end
       end
