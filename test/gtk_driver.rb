@@ -73,6 +73,24 @@ module GtkDriver
 
     # --- Called from inside a step ----------------------------------------
 
+    # Drains every source already pending on the default main context.
+    #
+    # Several widgets (Task#toggle_visibility among them) defer a property
+    # set with `GLib.idle_add` rather than setting it synchronously — upstream
+    # does the same thing, so the port is right to match it. That makes the
+    # effect of calling such a method land on *some* turn of the main loop,
+    # not necessarily the one the caller is on. A step that triggers one and
+    # then immediately asserts the result is racing GLib's own scheduler, not
+    # testing the app; call this first to make the assertion wait for the
+    # idle callback instead of gambling on whether it already ran.
+    def settle(max_iterations: 1000)
+      iterations = 0
+      while GLib::MainContext.default.pending? && iterations < max_iterations
+        GLib::MainContext.default.iteration(false)
+        iterations += 1
+      end
+    end
+
     # Records a pass/fail. Prefer several small checks over one big one: when
     # something breaks you want to know which part.
     def check(description)

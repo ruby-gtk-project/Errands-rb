@@ -361,6 +361,7 @@ GtkDriver.drive(app, shots: 'tmp/shots') do |d, application|
   end
 
   d.step('the trashed task is hidden and marked') do
+    d.settle # Task#delete hides the row via GLib.idle_add, same as upstream.
     d.check('record is trashed') { Errands::UserData.tasks.find { |t| t.text == 'Bread' }.trash }
     task = application.window.sidebar.rows.first.task_list.tasks.find { |t| t.task_data.text == 'Bread' }
     d.check('widget is hidden') { !task.root.reveal_child? }
