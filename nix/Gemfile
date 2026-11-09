@@ -9,8 +9,8 @@
 source "https://rubygems.org"
 
 gem "adwaita"
-gem "gtk4"
-gem "glib2"
 gem "ashpd"
+gem "glib2"
 gem "goa-rb"
+gem "gtk4"
 gem "rexml"
